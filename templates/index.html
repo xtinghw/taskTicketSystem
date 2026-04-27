@@ -1,81 +1,131 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Task Dashboard</title>
+    <title>Task Ticket Dashboard</title>
     <style>
         body {
-            font-family: Arial;
-            padding: 20px;
+            font-family: Arial, sans-serif;
+            padding: 24px;
+            background: #f6f7f9;
         }
+
+        h1, h2 {
+            color: #222;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
         .card {
             display: inline-block;
-            padding: 15px;
-            margin: 10px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
+            padding: 16px;
+            margin: 8px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
             width: 150px;
             text-align: center;
+            background: white;
         }
+
         .title {
             font-size: 14px;
-            color: gray;
+            color: #666;
         }
+
         .value {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: bold;
+            margin-top: 6px;
         }
+
         table {
-            margin-top: 20px;
+            margin-top: 12px;
             border-collapse: collapse;
-            width: 300px;
+            width: 100%;
+            background: white;
         }
+
+        th {
+            background: #222;
+            color: white;
+        }
+
         td, th {
-            border: 1px solid #ccc;
-            padding: 8px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .status {
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+        button {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            background: #222;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #444;
         }
     </style>
 </head>
 
 <body>
 
-<h1>Task Dashboard</h1>
+<h1>Task Ticket Dashboard</h1>
 
-<button onclick="loadSummary()">Load Dashboard</button>
+<div class="section">
+    <button onclick="loadDashboard()">Refresh Dashboard</button>
+</div>
 
-<div id="cards"></div>
+<div class="section">
+    <h2>Summary</h2>
+    <div id="cards"></div>
+</div>
 
-<h2>Staff Failures</h2>
-<table>
+<div class="section">
+    <h2>Staff Failures</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Staff</th>
+                <th>Failures</th>
+            </tr>
+        </thead>
+        <tbody id="staffTable"></tbody>
+    </table>
+</div>
+
+<div class="section">
     <h2>All Tickets</h2>
-
-<button onclick="loadTickets()">Load Tickets</button>
-
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Assigned To</th>
-            <th>Status</th>
-            <th>Proof</th>
-        </tr>
-    </thead>
-    <tbody id="ticketTable"></tbody>
-</table>
-
-    <thead>
-        <tr>
-            <th>Staff</th>
-            <th>Failures</th>
-        </tr>
-    </thead>
-    <tbody id="staffTable"></tbody>
-</table>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Title</th>
+                <th>Assigned To</th>
+                <th>Status</th>
+                <th>Proof</th>
+            </tr>
+        </thead>
+        <tbody id="ticketTable"></tbody>
+    </table>
+</div>
 
 <script>
 async function loadSummary() {
     const res = await fetch("/dashboard/summary");
     const data = await res.json();
+
+    const status = data.status_summary;
 
     const cards = `
         <div class="card">
@@ -84,25 +134,34 @@ async function loadSummary() {
         </div>
         <div class="card">
             <div class="title">Pending</div>
-            <div class="value">${data.status_summary.pending}</div>
+            <div class="value">${status.pending || 0}</div>
+        </div>
+        <div class="card">
+            <div class="title">Assigned</div>
+            <div class="value">${status.assigned || 0}</div>
+        </div>
+        <div class="card">
+            <div class="title">In Progress</div>
+            <div class="value">${status.in_progress || 0}</div>
         </div>
         <div class="card">
             <div class="title">Submitted</div>
-            <div class="value">${data.status_summary.submitted}</div>
+            <div class="value">${status.submitted || 0}</div>
         </div>
         <div class="card">
             <div class="title">Approved</div>
-            <div class="value">${data.status_summary.approved}</div>
+            <div class="value">${status.approved || 0}</div>
         </div>
         <div class="card">
             <div class="title">Rejected</div>
-            <div class="value">${data.status_summary.rejected}</div>
+            <div class="value">${status.rejected || 0}</div>
         </div>
     `;
 
     document.getElementById("cards").innerHTML = cards;
 
     let rows = "";
+
     data.staff_failures.forEach(staff => {
         rows += `
             <tr>
@@ -125,9 +184,10 @@ async function loadTickets() {
         rows += `
             <tr>
                 <td>${ticket.id}</td>
+                <td>${ticket.ticket_type || "task"}</td>
                 <td>${ticket.title}</td>
                 <td>${ticket.assigned_to}</td>
-                <td>${ticket.status}</td>
+                <td class="status">${ticket.status}</td>
                 <td>
                     ${
                         ticket.proof_path
@@ -141,8 +201,14 @@ async function loadTickets() {
 
     document.getElementById("ticketTable").innerHTML = rows;
 }
-</script>
 
+function loadDashboard() {
+    loadSummary();
+    loadTickets();
+}
+
+window.onload = loadDashboard;
+</script>
 
 </body>
 </html>

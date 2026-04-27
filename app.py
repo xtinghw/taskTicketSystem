@@ -109,6 +109,7 @@ def get_tickets():
     for ticket in tickets:
         ticket_list.append({
             "id": ticket["id"],
+            "ticket_type": ticket["ticket_type"],
             "title": ticket["title"],
             "description": ticket["description"],
             "assigned_to": ticket["assigned_to"],
@@ -553,7 +554,7 @@ def start_ticket(ticket_id):
             "error": "Ticket not found"
         }), 404
 
-    if ticket["status"] != "pending":
+    if ticket["status"] not in ["pending", "assigned"]:
         conn.close()
         return jsonify({
             "error": "Only pending tickets can be started"
@@ -582,6 +583,50 @@ def start_ticket(ticket_id):
     return jsonify({
         "message": "Ticket started successfully"
     }), 200
+
+@app.route("/tickets/<int:ticket_id>/assign", methods=["PATCH"])
+def assign_ticket(ticket_id):
+    data = request.get_json()
+    assigned_to = data.get("assigned_to")
+
+    if not assigned_to:
+        return jsonify({"error": "assigned_to is required"}), 400
+
+    conn = get_db_connection()
+
+    ticket = conn.execute("""
+        SELECT *
+        FROM tickets
+        WHERE id = ?
+    """, (ticket_id,)).fetchone()
+
+    if ticket is None:
+        conn.close()
+        return jsonify({"error": "Ticket not found"}), 404
+
+    conn.execute("""
+        UPDATE tickets
+        SET assigned_to = ?,
+            status = 'assigned',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (assigned_to, ticket_id))
+
+    conn.commit()
+    conn.close()
+
+    add_audit_log(
+        ticket_id=ticket_id,
+        action="assigned",
+        actor="manager",
+        details=f"Assigned to {assigned_to}"
+    )
+
+    return jsonify({
+        "message": f"Ticket assigned to {assigned_to}"
+    }), 200
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
