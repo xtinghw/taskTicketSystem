@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+        .card {
+            display: inline-block;
+            padding: 15px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            width: 150px;
+            text-align: center;
+        }
+        .title {
+            font-size: 14px;
+            color: gray;
+        }
+        .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        table {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 300px;
+        }
+        td, th {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Task Dashboard</h1>
+
+<button onclick="loadSummary()">Load Dashboard</button>
+
+<div id="cards"></div>
+
+<h2>Staff Failures</h2>
+<table>
+    <h2>All Tickets</h2>
+
+<button onclick="loadTickets()">Load Tickets</button>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Assigned To</th>
+            <th>Status</th>
+            <th>Proof</th>
+        </tr>
+    </thead>
+    <tbody id="ticketTable"></tbody>
+</table>
+
+    <thead>
+        <tr>
+            <th>Staff</th>
+            <th>Failures</th>
+        </tr>
+    </thead>
+    <tbody id="staffTable"></tbody>
+</table>
+
+<script>
+async function loadSummary() {
+    const res = await fetch("/dashboard/summary");
+    const data = await res.json();
+
+    const cards = `
+        <div class="card">
+            <div class="title">Total</div>
+            <div class="value">${data.total_tickets}</div>
+        </div>
+        <div class="card">
+            <div class="title">Pending</div>
+            <div class="value">${data.status_summary.pending}</div>
+        </div>
+        <div class="card">
+            <div class="title">Submitted</div>
+            <div class="value">${data.status_summary.submitted}</div>
+        </div>
+        <div class="card">
+            <div class="title">Approved</div>
+            <div class="value">${data.status_summary.approved}</div>
+        </div>
+        <div class="card">
+            <div class="title">Rejected</div>
+            <div class="value">${data.status_summary.rejected}</div>
+        </div>
+    `;
+
+    document.getElementById("cards").innerHTML = cards;
+
+    let rows = "";
+    data.staff_failures.forEach(staff => {
+        rows += `
+            <tr>
+                <td>${staff.staff_name}</td>
+                <td>${staff.failure_count}</td>
+            </tr>
+        `;
+    });
+
+    document.getElementById("staffTable").innerHTML = rows;
+}
+
+async function loadTickets() {
+    const res = await fetch("/tickets");
+    const tickets = await res.json();
+
+    let rows = "";
+
+    tickets.forEach(ticket => {
+        rows += `
+            <tr>
+                <td>${ticket.id}</td>
+                <td>${ticket.title}</td>
+                <td>${ticket.assigned_to}</td>
+                <td>${ticket.status}</td>
+                <td>
+                    ${
+                        ticket.proof_path
+                        ? `<a href="${ticket.proof_path}" target="_blank">View</a>`
+                        : "No proof"
+                    }
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById("ticketTable").innerHTML = rows;
+}
+</script>
+
+
+</body>
+</html>
