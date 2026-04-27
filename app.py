@@ -178,10 +178,10 @@ def submit_ticket(ticket_id):
             "error": "Ticket not found"
         }), 404
 
-    if ticket["status"] != "pending":
+    if ticket["status"] not in  ["pending", "in_progress"]:
         conn.close()
         return jsonify({
-            "error": "Only pending tickets can be submitted"
+            "error": "Only pending or in progress tickets can be submitted"
         }), 400
 
     conn.execute("""
@@ -534,6 +534,53 @@ def dashboard_summary():
         "total_tickets": total_tickets,
         "status_summary": status_summary,
         "staff_failures": staff_failure_list
+    }), 200
+
+
+@app.route("/tickets/<int:ticket_id>/start", methods=["PATCH"])
+def start_ticket(ticket_id):
+    conn = get_db_connection()
+
+    ticket = conn.execute("""
+        SELECT *
+        FROM tickets
+        WHERE id = ?
+    """, (ticket_id,)).fetchone()
+
+    if ticket is None:
+        conn.close()
+        return jsonify({
+            "error": "Ticket not found"
+        }), 404
+
+    if ticket["status"] != "pending":
+        conn.close()
+        return jsonify({
+            "error": "Only pending tickets can be started"
+        }), 400
+
+    conn.execute("""
+        UPDATE tickets
+        SET status = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (
+        "in_progress",
+        ticket_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    add_audit_log(
+        ticket_id=ticket_id,
+        action="started",
+        actor="staff",
+        details="Ticket started"
+    )
+
+    return jsonify({
+        "message": "Ticket started successfully"
     }), 200
 
 if __name__ == "__main__":
