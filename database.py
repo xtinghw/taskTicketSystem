@@ -15,6 +15,7 @@ def init_db():
     conn.execute("""
         CREATE TABLE IF NOT EXISTS tickets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_type TEXT NOT NULL DEFAULT 'task',
             title TEXT NOT NULL,
             description TEXT NOT NULL,
             assigned_to TEXT NOT NULL,

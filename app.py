@@ -43,6 +43,7 @@ def home():
 def create_ticket():
     data = request.get_json()
 
+    ticket_type = data.get("ticket_type", "task")
     title = data.get("title")
     description = data.get("description")
     assigned_to = data.get("assigned_to")
@@ -58,13 +59,15 @@ def create_ticket():
 
     cursor = conn.execute("""
         INSERT INTO tickets (
+            ticket_type,
             title,
             description,
             assigned_to,
             proof_required
         )
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?)
     """, (
+        ticket_type, 
         title,
         description,
         assigned_to,
@@ -138,6 +141,7 @@ def get_ticket(ticket_id):
 
     return jsonify({
         "id": ticket["id"],
+        "ticket_type": ticket["ticket_type"],
         "title": ticket["title"],
         "description": ticket["description"],
         "assigned_to": ticket["assigned_to"],
