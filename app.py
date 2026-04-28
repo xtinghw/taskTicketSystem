@@ -7,7 +7,27 @@ app.secret_key = "dev_secret_key_change_later"
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
+#user table
+USERS = {
+    "manager":{
+        "password": "1234",
+        "role": "manager",
+        "display_name": "Manager"
+    },
+    "staff_a": {
+        "password": "1234",
+        "role": "staff",
+        "dispaly_name": "Staff A"
+    }
+}
+
 init_db()
+
+def require_login():
+    return "username" in session
+
+def rwquire_role(role):
+    return seesion.get("role") == role
 
 def add_audit_log(ticket_id, action, actor, details=None):
     conn = get_db_connection()
@@ -37,6 +57,55 @@ def dashboard_page():
 @app.route("/")
 def home():
     return "Task Ticket System is running."
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+
+    username = data.get("username")
+    password = data.get("password")
+
+    user = USERS.get(username)
+
+    if user is None or user["password"] != password:
+        return jsonify({
+            "error": "Invalid username or password"
+        }), 401
+
+    session["username"] = username
+    session["role"] = user["role"]
+    session["display_name"] = user.get("display_name", username)
+
+    return jsonify({
+        "message": "Login successful",
+        "username": username,
+        "role": user["role"],
+        "display_name": session["display_name"]
+    }), 200
+
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+
+    return jsonify({
+        "message": "Logged out successfully"
+    }), 200
+
+
+@app.route("/me", methods=["GET"])
+def me():
+    if "username" not in session:
+        return jsonify({
+            "logged_in": False
+        }), 200
+
+    return jsonify({
+        "logged_in": True,
+        "username": session["username"],
+        "role": session["role"],
+        "display_name": session["display_name"]
+    }), 200
 
 
 @app.route("/tickets", methods=["POST"])
