@@ -18,6 +18,11 @@ USERS = {
         "password": "1234",
         "role": "staff",
         "display_name": "Staff A"
+    },
+    "staffb":{
+        "password": "1234",
+        "role": "staff",
+        "display_name": "Staff B"        
     }
 }
 
@@ -189,11 +194,24 @@ def create_ticket():
 def get_tickets():
     conn = get_db_connection()
 
-    tickets = conn.execute("""
-        SELECT *
-        FROM tickets
-        ORDER BY created_at DESC
-    """).fetchall()
+    role = session.get("role")
+    display_name = session.get("display_name")
+
+    if role == "manager":
+        tickets = conn.execute("""
+            SELECT *
+            FROM tickets
+            ORDER BY created_at DESC
+        """).fetchall()
+    else:
+        tickets = conn.execute("""
+            SELECT *
+            FROM tickets
+            WHERE visibility = 'public'
+               OR reported_by = ?
+               OR assigned_to = ?
+            ORDER BY created_at DESC
+        """, (display_name, display_name)).fetchall()
 
     conn.close()
 
@@ -205,8 +223,10 @@ def get_tickets():
             "ticket_type": ticket["ticket_type"],
             "title": ticket["title"],
             "description": ticket["description"],
+            "reported_by": ticket["reported_by"],
             "reported_to": ticket["reported_to"],
             "assigned_to": ticket["assigned_to"],
+            "visibility": ticket["visibility"],
             "status": ticket["status"],
             "proof_required": ticket["proof_required"],
             "proof_path": ticket["proof_path"],
@@ -227,20 +247,37 @@ def get_ticket(ticket_id):
         WHERE id = ?
     """, (ticket_id,)).fetchone()
 
-    conn.close()
-
     if ticket is None:
+        conn.close()
         return jsonify({
             "error": "Ticket not found"
         }), 404
+
+    role = session.get("role")
+    display_name = session.get("display_name")
+
+    if role != "manager":
+        if (
+            ticket["visibility"] == "manager_only"
+            and ticket["reported_by"] != display_name
+            and ticket["assigned_to"] != display_name
+        ):
+            conn.close()
+            return jsonify({
+                "error": "You do not have permission to view this ticket"
+            }), 403
+
+    conn.close()
 
     return jsonify({
         "id": ticket["id"],
         "ticket_type": ticket["ticket_type"],
         "title": ticket["title"],
         "description": ticket["description"],
+        "reported_by": ticket["reported_by"],
         "reported_to": ticket["reported_to"],
         "assigned_to": ticket["assigned_to"],
+        "visibility": ticket["visibility"],
         "status": ticket["status"],
         "proof_required": ticket["proof_required"],
         "proof_path": ticket["proof_path"],
