@@ -12,16 +12,22 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
 
+#Ticket table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS tickets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ticket_type TEXT NOT NULL DEFAULT 'task',
             title TEXT NOT NULL,
             description TEXT NOT NULL,
-            assigned_to TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending',
-            proof_required INTEGER NOT NULL DEFAULT 1,
+            reported_by TEXT,
+            reported_to TEXT,
+            assigned_to TEXT,
+            visibility TEXT DEFAULT 'public',
+            status TEXT DEFAULT 'pending',
+            proof_required INTEGER DEFAULT 1,
+            proof_type TEXT DEFAULT 'photo',
             proof_path TEXT,
+            staff_note TEXT,
             manager_comment TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -14,10 +14,10 @@ USERS = {
         "role": "manager",
         "display_name": "Manager"
     },
-    "staff_a": {
+    "staffa": {
         "password": "1234",
         "role": "staff",
-        "dispaly_name": "Staff A"
+        "display_name": "Staff A"
     }
 }
 
@@ -26,8 +26,8 @@ init_db()
 def require_login():
     return "username" in session
 
-def rwquire_role(role):
-    return seesion.get("role") == role
+def require_role(role):
+    return session.get("role") == role
 
 def add_audit_log(ticket_id, action, actor, details=None):
     conn = get_db_connection()
@@ -115,13 +115,24 @@ def create_ticket():
     ticket_type = data.get("ticket_type", "task")
     title = data.get("title")
     description = data.get("description")
-    assigned_to = data.get("assigned_to")
+    reported_by = session.get("display_name", "Unknown")
+    role = session.get("role")
+
+    if role == "staff":
+        reported_to = "Manager"
+        assigned_to = None
+    else:
+        reported_to = None
+        assigned_to = data.get("assigned_to")
+
+    visibility = data.get("visibility", "public")
     proof_required = data.get("proof_required", 1)
+    proof_type = data.get("proof_type", "photo")
     
     # Basic validation must have title, description, and assigned_to fields
-    if not title or not description or not assigned_to:
+    if not title or not description:
         return jsonify({
-            "error": "title, description, and assigned_to are required"
+            "error": "title and description are required"
         }), 400
 
     conn = get_db_connection()
@@ -131,16 +142,24 @@ def create_ticket():
             ticket_type,
             title,
             description,
+            reported_by,
+            reported_to,
             assigned_to,
-            proof_required
+            visibility,
+            proof_required,
+            proof_type
         )
-        VALUES (?, ?, ?, ?, ?)
-    """, (
-        ticket_type, 
-        title,
-        description,
-        assigned_to,
-        proof_required
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            ticket_type,
+            title,
+            description,
+            reported_by,
+            reported_to,
+            assigned_to,
+            visibility,
+            proof_required,
+            proof_type
     ))
 
     conn.commit()
@@ -149,12 +168,17 @@ def create_ticket():
 
     conn.close()
 
+    if role == "manager":
+        details = f"Ticket created by {reported_by} and assigned to {assigned_to}"
+    else:
+        details = f"Ticket reported by {reported_by} to {reported_to}"
+
     add_audit_log(
-    ticket_id=ticket_id,
-    action="created",
-    actor="manager",
-    details=f"Ticket created and assigned to {assigned_to}"
-)
+        ticket_id=ticket_id,
+        action="created",
+        actor=reported_by,
+        details=details
+    )
 
     return jsonify({
         "message": "Ticket created successfully",
@@ -181,6 +205,7 @@ def get_tickets():
             "ticket_type": ticket["ticket_type"],
             "title": ticket["title"],
             "description": ticket["description"],
+            "reported_to": ticket["reported_to"],
             "assigned_to": ticket["assigned_to"],
             "status": ticket["status"],
             "proof_required": ticket["proof_required"],
@@ -214,6 +239,7 @@ def get_ticket(ticket_id):
         "ticket_type": ticket["ticket_type"],
         "title": ticket["title"],
         "description": ticket["description"],
+        "reported_to": ticket["reported_to"],
         "assigned_to": ticket["assigned_to"],
         "status": ticket["status"],
         "proof_required": ticket["proof_required"],
@@ -698,4 +724,4 @@ def assign_ticket(ticket_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5002, use_reloader=False)
