@@ -26,6 +26,13 @@ USERS = {
     }
 }
 
+STATUS_PENDING = "pending"
+STATUS_ASSIGNED = "assigned"
+STATUS_IN_PROGRESS = "in_progress"
+STATUS_SUBMITTED = "submitted"
+STATUS_APPROVED = "approved"
+STATUS_REJECTED = "rejected"
+
 init_db()
 
 def require_login():
@@ -33,6 +40,12 @@ def require_login():
 
 def require_role(role):
     return session.get("role") == role
+
+def error_response(message, status_code):
+    return jsonify({
+        "success": False,
+        "error": message
+    }), status_code
 
 def add_audit_log(ticket_id, action, actor, details=None):
     conn = get_db_connection()
@@ -73,9 +86,8 @@ def login():
     user = USERS.get(username)
 
     if user is None or user["password"] != password:
-        return jsonify({
-            "error": "Invalid username or password"
-        }), 401
+        return error_response("Invalid username or password", 401) 
+     
 
     session["username"] = username
     session["role"] = user["role"]
@@ -136,9 +148,7 @@ def create_ticket():
     
     # Basic validation must have title, description, and assigned_to fields
     if not title or not description:
-        return jsonify({
-            "error": "title and description are required"
-        }), 400
+        return error_response("Title and description are required", 400)
 
     conn = get_db_connection()
 
@@ -249,9 +259,7 @@ def get_ticket(ticket_id):
 
     if ticket is None:
         conn.close()
-        return jsonify({
-            "error": "Ticket not found"
-        }), 404
+        return error_response("Ticket not found", 404)
 
     role = session.get("role")
     display_name = session.get("display_name")
@@ -263,9 +271,7 @@ def get_ticket(ticket_id):
             and ticket["assigned_to"] != display_name
         ):
             conn.close()
-            return jsonify({
-                "error": "You do not have permission to view this ticket"
-            }), 403
+            return error_response("You do not have permission to view this ticket", 403)
 
     conn.close()
 
@@ -293,9 +299,7 @@ def submit_ticket(ticket_id):
     proof_path = data.get("proof_path")
 
     if not proof_path:
-        return jsonify({
-            "error": "proof_path is required"
-        }), 400
+        return error_response("proof_path is required", 400)
 
     conn = get_db_connection()
 
@@ -307,16 +311,12 @@ def submit_ticket(ticket_id):
 
     if ticket is None:
         conn.close()
-        return jsonify({
-            "error": "Ticket not found"
-        }), 404
+        return error_response("Ticket not found", 404)
 
-    if ticket["status"] not in  ["pending", "in_progress"]:
+    if ticket["status"] not in  [STATUS_PENDING, STATUS_IN_PROGRESS]:
         conn.close()
-        return jsonify({
-            "error": "Only pending or in progress tickets can be submitted"
-        }), 400
-
+        return error_response("Only pending or in progress tickets can be submitted", 400)
+    
     conn.execute("""
         UPDATE tickets
         SET status = ?,
@@ -324,7 +324,7 @@ def submit_ticket(ticket_id):
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
     """, (
-        "submitted",
+        STATUS_SUBMITTED,
         proof_path,
         ticket_id
     ))
@@ -342,7 +342,7 @@ def submit_ticket(ticket_id):
     return jsonify({
         "message": "Ticket submitted successfully",
         "ticket_id": ticket_id,
-        "status": "submitted"
+        "status": STATUS_SUBMITTED
     }), 200
 
 @app.route("/tickets/<int:ticket_id>/approve", methods=["PATCH"])
@@ -357,23 +357,19 @@ def approve_ticket(ticket_id):
 
     if ticket is None:
         conn.close()
-        return jsonify({
-            "error": "Ticket not found"
-        }), 404
+        return error_response("Ticket not found", 404)
 
-    if ticket["status"] != "submitted":
+    if ticket["status"] != STATUS_SUBMITTED:
         conn.close()
-        return jsonify({
-            "error": "Only submitted tickets can be approved"
-        }), 400
-
+        return error_response("Only submitted tickets can be approved", 400)
+    
     conn.execute("""
         UPDATE tickets
         SET status = ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
     """, (
-        "approved",
+        STATUS_APPROVED,
         ticket_id
     ))
 
@@ -400,9 +396,7 @@ def reject_ticket(ticket_id):
     manager_comment = data.get("manager_comment")
 
     if not manager_comment:
-        return jsonify({
-            "error": "manager_comment is required when rejecting a ticket"
-        }), 400
+        return error_response("manager_comment is required when rejecting a ticket", 400)
 
     conn = get_db_connection()
 
@@ -414,15 +408,11 @@ def reject_ticket(ticket_id):
 
     if ticket is None:
         conn.close()
-        return jsonify({
-            "error": "Ticket not found"
-        }), 404
+        return error_response("Ticket not found", 404)
 
-    if ticket["status"] != "submitted":
+    if ticket["status"] != STATUS_SUBMITTED:
         conn.close()
-        return jsonify({
-            "error": "Only submitted tickets can be rejected"
-        }), 400
+        return error_response("Only submitted tickets can be rejected", 400)
 
     conn.execute("""
         UPDATE tickets
@@ -431,7 +421,7 @@ def reject_ticket(ticket_id):
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
     """, (
-        "rejected",
+        STATUS_REJECTED,
         manager_comment,
         ticket_id
     ))
@@ -449,7 +439,7 @@ def reject_ticket(ticket_id):
     return jsonify({
         "message": "Ticket rejected successfully",
         "ticket_id": ticket_id,
-        "status": "rejected",
+        "status": STATUS_REJECTED,
         "manager_comment": manager_comment
     }), 200
 
@@ -461,9 +451,7 @@ def resubmit_ticket(ticket_id):
     proof_path = data.get("proof_path")
 
     if not proof_path:
-        return jsonify({
-            "error": "proof_path is required"
-        }), 400
+        return error_response("proof_path is required", 400)
 
     conn = get_db_connection()
 
@@ -475,15 +463,11 @@ def resubmit_ticket(ticket_id):
 
     if ticket is None:
         conn.close()
-        return jsonify({
-            "error": "Ticket not found"
-        }), 404
+        return error_response("Ticket not found", 404)
 
-    if ticket["status"] != "rejected":
+    if ticket["status"] != STATUS_REJECTED:
         conn.close()
-        return jsonify({
-            "error": "Only rejected tickets can be resubmitted"
-        }), 400
+        return error_response("Only rejected tickets can be resubmitted", 400)
 
     conn.execute("""
         UPDATE tickets
@@ -493,7 +477,7 @@ def resubmit_ticket(ticket_id):
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
     """, (
-        "submitted",
+        STATUS_SUBMITTED,
         proof_path,
         ticket_id
     ))
@@ -511,7 +495,7 @@ def resubmit_ticket(ticket_id):
     return jsonify({
         "message": "Ticket resubmitted successfully",
         "ticket_id": ticket_id,
-        "status": "submitted"
+        "status": STATUS_SUBMITTED
     }), 200
 
 @app.route("/tickets/<int:ticket_id>/logs", methods=["GET"])
@@ -682,15 +666,11 @@ def start_ticket(ticket_id):
 
     if ticket is None:
         conn.close()
-        return jsonify({
-            "error": "Ticket not found"
-        }), 404
+        return  error_response("Ticket not found", 404)
 
-    if ticket["status"] not in ["pending", "assigned"]:
+    if ticket["status"] not in [STATUS_PENDING, STATUS_ASSIGNED]:
         conn.close()
-        return jsonify({
-            "error": "Only pending tickets can be started"
-        }), 400
+        return error_response("Only pending tickets can be started", 400)
 
     conn.execute("""
         UPDATE tickets
@@ -698,7 +678,7 @@ def start_ticket(ticket_id):
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
     """, (
-        "in_progress",
+        STATUS_IN_PROGRESS,
         ticket_id
     ))
 
@@ -722,7 +702,7 @@ def assign_ticket(ticket_id):
     assigned_to = data.get("assigned_to")
 
     if not assigned_to:
-        return jsonify({"error": "assigned_to is required"}), 400
+        return error_response("assigned_to is required", 400)
 
     conn = get_db_connection()
 
@@ -734,15 +714,15 @@ def assign_ticket(ticket_id):
 
     if ticket is None:
         conn.close()
-        return jsonify({"error": "Ticket not found"}), 404
+        return error_response("Ticket not found", 404)
 
     conn.execute("""
         UPDATE tickets
         SET assigned_to = ?,
-            status = 'assigned',
+            status = ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-    """, (assigned_to, ticket_id))
+    """, (assigned_to, STATUS_ASSIGNED, ticket_id))
 
     conn.commit()
     conn.close()
