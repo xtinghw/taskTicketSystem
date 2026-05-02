@@ -47,6 +47,12 @@ def error_response(message, status_code):
         "error": message
     }), status_code
 
+def current_user_role():
+    return session.get("role")
+
+def current_user_display_name():
+    return session.get("display_name", "Unknown")
+
 def add_audit_log(ticket_id, action, actor, details=None):
     conn = get_db_connection()
 
@@ -204,8 +210,8 @@ def create_ticket():
 def get_tickets():
     conn = get_db_connection()
 
-    role = session.get("role")
-    display_name = session.get("display_name")
+    role = current_user_role()
+    display_name = current_user_display_name()
 
     if role == "manager":
         tickets = conn.execute("""
@@ -261,8 +267,8 @@ def get_ticket(ticket_id):
         conn.close()
         return error_response("Ticket not found", 404)
 
-    role = session.get("role")
-    display_name = session.get("display_name")
+    role = current_user_role()
+    display_name = current_user_display_name()
 
     if role != "manager":
         if (
