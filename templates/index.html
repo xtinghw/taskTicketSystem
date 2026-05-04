@@ -80,6 +80,12 @@
 <body>
 
 <h1>Task Ticket Dashboard</h1>
+<h3 id="userInfo">Checking user</h3>
+
+<div id="managerSection" style="display: none;">
+    <h2>Manager Controls</h2>
+    <p>You can assign, approve and reject tickets.</p>
+</div>
 
 <div class="section">
     <button onclick="loadDashboard()">Refresh Dashboard</button>
@@ -121,6 +127,26 @@
 </div>
 
 <script>
+async function loadUser(){
+    const res = await fetch("/me");
+    const user = await res.json();
+
+    if(!user.logged_in){
+        document.getElementById("userInfo").innerText = "Not logged in";
+        document.getElementById("managerSection").style.display = "none";
+        return;
+    }
+
+    document.getElementById("userInfo").innerText = 
+        "Logged in as: " + user.display_name + " (" + user.role + ")";
+    
+    if(user.role === "manager"){
+        document.getElementById("managerSection").style.display = "block";
+    } else {
+        document.getElementById("managerSection").style.display = "none";
+    }
+}
+
 async function loadSummary() {
     const res = await fetch("/dashboard/summary");
     const data = await res.json();
@@ -207,7 +233,10 @@ function loadDashboard() {
     loadTickets();
 }
 
-window.onload = loadDashboard;
+window.onload = function(){
+    loadUser();
+    loadDashboard();
+}
 </script>
 
 </body>
