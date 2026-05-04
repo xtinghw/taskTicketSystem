@@ -120,6 +120,7 @@
                 <th>Assigned To</th>
                 <th>Status</th>
                 <th>Proof</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody id="ticketTable"></tbody>
@@ -127,20 +128,23 @@
 </div>
 
 <script>
-async function loadUser(){
+async function loadUser() {
     const res = await fetch("/me");
     const user = await res.json();
 
-    if(!user.logged_in){
+    if (!user.logged_in) {
         document.getElementById("userInfo").innerText = "Not logged in";
         document.getElementById("managerSection").style.display = "none";
+        window.currentUserRole = null;
         return;
     }
 
-    document.getElementById("userInfo").innerText = 
+    window.currentUserRole = user.role;
+
+    document.getElementById("userInfo").innerText =
         "Logged in as: " + user.display_name + " (" + user.role + ")";
-    
-    if(user.role === "manager"){
+
+    if (user.role === "manager") {
         document.getElementById("managerSection").style.display = "block";
     } else {
         document.getElementById("managerSection").style.display = "none";
@@ -207,6 +211,14 @@ async function loadTickets() {
     let rows = "";
 
     tickets.forEach(ticket => {
+        let actionButton = "";
+
+        if(window.currentUserRole === "manager") {
+            actionButton = `
+                <button onclick="assignTicket(${ticket.id})">View / Manage</button>
+            `;
+        }
+
         rows += `
             <tr>
                 <td>${ticket.id}</td>
@@ -221,6 +233,9 @@ async function loadTickets() {
                         : "No proof"
                     }
                 </td>
+                <td>
+                    ${actionButton}
+                </td>
             </tr>
         `;
     });
@@ -228,13 +243,42 @@ async function loadTickets() {
     document.getElementById("ticketTable").innerHTML = rows;
 }
 
+async function assignTicket(ticketId) {
+    const staffName = prompt("Assign to staff name, for example: Staff A");
+
+    if (!staffName) {
+        return;
+    }
+
+    const res = await fetch(`/tickets/${ticketId}/assign`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            assigned_to: staffName
+        })
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+        alert(result.error || "Failed to assign ticket");
+        return;
+    }
+
+    alert(result.message);
+    loadTickets();
+    loadSummary();
+}
+
 function loadDashboard() {
     loadSummary();
     loadTickets();
 }
 
-window.onload = function(){
-    loadUser();
+window.onload = async function(){
+    await loadUser();
     loadDashboard();
 }
 </script>
