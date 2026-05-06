@@ -214,9 +214,29 @@ async function loadTickets() {
         let actionButton = "";
 
         if(window.currentUserRole === "manager") {
-            actionButton = `
-                <button onclick="assignTicket(${ticket.id})">View / Manage</button>
-            `;
+            if(ticket.status === "submitted") {
+                actionButton = `
+                    <button onclick="approveTicket(${ticket.id})">Approve</button>
+                    <button onclick="rejectTicket(${ticket.id})">Reject</button>
+                `;
+            } else {
+                actionButton = `
+                    <button onclick="assignTicket(${ticket.id})">Assign</button>
+                `;
+            }
+        } else if (window.currentUserRole === "staff") {
+            if(ticket.status === "pending" || ticket.status === "assigned") {
+                actionButton = `
+                    <button onclick="startTicket(${ticket.id})">Start</button>
+                `;
+            }else if (ticket.status === "in_progress") {
+                actionButton = `
+                    <button onclick="submitTicket(${ticket.id})">Submit Proof</button>
+                `;
+            } else{
+                actionButton = "View only";
+            }  
+
         }
 
         rows += `
@@ -224,7 +244,7 @@ async function loadTickets() {
                 <td>${ticket.id}</td>
                 <td>${ticket.ticket_type || "task"}</td>
                 <td>${ticket.title}</td>
-                <td>${ticket.assigned_to}</td>
+                <td>${ticket.assigned_to || "Unassigned"}</td>
                 <td class="status">${ticket.status}</td>
                 <td>
                     ${
@@ -264,6 +284,104 @@ async function assignTicket(ticketId) {
 
     if (!res.ok) {
         alert(result.error || "Failed to assign ticket");
+        return;
+    }
+
+    alert(result.message);
+    loadTickets();
+    loadSummary();
+}
+
+async function startTicket(ticketId) {
+    const res = await fetch(`/tickets/${ticketId}/start`, {
+        method: "PATCH"
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+        alert(result.error || "Failed to start ticket");
+        return;
+    }
+
+    alert(result.message);
+    loadTickets();
+    loadSummary();
+}
+
+async function submitTicket(ticketId) {
+    const proofPath = prompt("Enter proof path, for example: uploads/test.jpg");
+
+    if (!proofPath) {
+        return;
+    }
+
+    const res = await fetch(`/tickets/${ticketId}/submit`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            proof_path: proofPath
+        })
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+        alert(result.error || "Failed to submit ticket");
+        return;
+    }
+
+    alert(result.message);
+    loadTickets();
+    loadSummary();
+}
+
+async function approveTicket(ticketId) {
+    const confirmed = confirm("Approve this ticket?");
+
+    if (!confirmed) {
+        return;
+    }
+
+    const res = await fetch(`/tickets/${ticketId}/approve`, {
+        method: "PATCH"
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+        alert(result.error || "Failed to approve ticket");
+        return;
+    }
+
+    alert(result.message);
+    loadTickets();
+    loadSummary();
+}
+
+async function rejectTicket(ticketId) {
+    const managerComment = prompt("Enter rejection reason:");
+
+    if (!managerComment) {
+        return;
+    }
+
+    const res = await fetch(`/tickets/${ticketId}/reject`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            manager_comment: managerComment
+        })
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+        alert(result.error || "Failed to reject ticket");
         return;
     }
 
