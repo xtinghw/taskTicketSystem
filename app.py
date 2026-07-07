@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+from flask import Flask, request, jsonify, render_template, session, url_for
 from database import init_db, get_db_connection
 
 app = Flask(__name__)
@@ -7,9 +7,10 @@ app.secret_key = "dev_secret_key_change_later"
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-#user table
+
+# Demo user table
 USERS = {
-    "manager":{
+    "manager": {
         "password": "1234",
         "role": "manager",
         "display_name": "Manager"
@@ -19,12 +20,13 @@ USERS = {
         "role": "staff",
         "display_name": "Staff A"
     },
-    "staffb":{
+    "staffb": {
         "password": "1234",
         "role": "staff",
-        "display_name": "Staff B"        
+        "display_name": "Staff B"
     }
 }
+
 
 STATUS_PENDING = "pending"
 STATUS_ASSIGNED = "assigned"
@@ -33,13 +35,25 @@ STATUS_SUBMITTED = "submitted"
 STATUS_APPROVED = "approved"
 STATUS_REJECTED = "rejected"
 
+
 init_db()
+
 
 def require_login():
     return "username" in session
 
+
 def require_role(role):
     return session.get("role") == role
+
+
+def current_user_role():
+    return session.get("role")
+
+
+def current_user_display_name():
+    return session.get("display_name", "Unknown")
+
 
 def error_response(message, status_code):
     return jsonify({
@@ -47,11 +61,6 @@ def error_response(message, status_code):
         "error": message
     }), status_code
 
-def current_user_role():
-    return session.get("role")
-
-def current_user_display_name():
-    return session.get("display_name", "Unknown")
 
 def add_audit_log(ticket_id, action, actor, details=None):
     conn = get_db_connection()
@@ -74,17 +83,79 @@ def add_audit_log(ticket_id, action, actor, details=None):
     conn.commit()
     conn.close()
 
+
 @app.route("/dashboard")
 def dashboard_page():
     return render_template("index.html")
 
+
 @app.route("/")
 def home():
-    return "Task Ticket System is running."
+    dashboard_url = url_for("dashboard_page")
+
+    return f"""
+    <!doctype html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Task Ticket System</title>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                margin: 0;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #f4f6f8;
+                color: #1f2937;
+            }}
+
+            main {{
+                width: min(420px, 90vw);
+                padding: 32px;
+                border: 1px solid #d8dee4;
+                border-radius: 8px;
+                background: #ffffff;
+                text-align: center;
+            }}
+
+            h1 {{
+                margin: 0 0 12px;
+                font-size: 28px;
+            }}
+
+            p {{
+                margin: 0 0 24px;
+                color: #4b5563;
+            }}
+
+            a {{
+                display: inline-block;
+                padding: 12px 18px;
+                border-radius: 6px;
+                background: #2563eb;
+                color: #ffffff;
+                text-decoration: none;
+                font-weight: 600;
+            }}
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>Task Ticket System</h1>
+            <p>The application is running.</p>
+            <a href="{dashboard_url}">Open Dashboard</a>
+        </main>
+    </body>
+    </html>
+    """
+
 
 @app.route("/login", methods=["POST"])
 def login():
-    data = request.get_json()
+    data = request.get_json() or {}
 
     username = data.get("username")
     password = data.get("password")
@@ -92,8 +163,7 @@ def login():
     user = USERS.get(username)
 
     if user is None or user["password"] != password:
-        return error_response("Invalid username or password", 401) 
-     
+        return error_response("Invalid username or password", 401)
 
     session["username"] = username
     session["role"] = user["role"]
@@ -133,13 +203,16 @@ def me():
 
 @app.route("/tickets", methods=["POST"])
 def create_ticket():
-    data = request.get_json()
+    if not require_login():
+        return error_response("Please login first to create a task or report an issue", 401)
+
+    data = request.get_json() or {}
 
     ticket_type = data.get("ticket_type", "task")
     title = data.get("title")
     description = data.get("description")
-    reported_by = session.get("display_name", "Unknown")
-    role = session.get("role")
+    reported_by = current_user_display_name()
+    role = current_user_role()
 
     if role == "staff":
         reported_to = "Manager"
@@ -151,8 +224,7 @@ def create_ticket():
     visibility = data.get("visibility", "public")
     proof_required = data.get("proof_required", 1)
     proof_type = data.get("proof_type", "photo")
-    
-    # Basic validation must have title, description, and assigned_to fields
+
     if not title or not description:
         return error_response("Title and description are required", 400)
 
@@ -171,22 +243,20 @@ def create_ticket():
             proof_type
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            ticket_type,
-            title,
-            description,
-            reported_by,
-            reported_to,
-            assigned_to,
-            visibility,
-            proof_required,
-            proof_type
+    """, (
+        ticket_type,
+        title,
+        description,
+        reported_by,
+        reported_to,
+        assigned_to,
+        visibility,
+        proof_required,
+        proof_type
     ))
 
     conn.commit()
-
     ticket_id = cursor.lastrowid
-
     conn.close()
 
     if role == "manager":
@@ -205,6 +275,7 @@ def create_ticket():
         "message": "Ticket created successfully",
         "ticket_id": ticket_id
     }), 201
+
 
 @app.route("/tickets", methods=["GET"])
 def get_tickets():
@@ -253,6 +324,7 @@ def get_tickets():
 
     return jsonify(ticket_list), 200
 
+
 @app.route("/tickets/<int:ticket_id>", methods=["GET"])
 def get_ticket(ticket_id):
     conn = get_db_connection()
@@ -298,10 +370,109 @@ def get_ticket(ticket_id):
         "updated_at": ticket["updated_at"]
     }), 200
 
+
+@app.route("/tickets/<int:ticket_id>/assign", methods=["PATCH"])
+def assign_ticket(ticket_id):
+    if current_user_role() != "manager":
+        return error_response("Only manager can assign tickets", 403)
+
+    data = request.get_json() or {}
+    assigned_to = data.get("assigned_to")
+
+    if not assigned_to:
+        return error_response("assigned_to is required", 400)
+
+    conn = get_db_connection()
+
+    ticket = conn.execute("""
+        SELECT *
+        FROM tickets
+        WHERE id = ?
+    """, (ticket_id,)).fetchone()
+
+    if ticket is None:
+        conn.close()
+        return error_response("Ticket not found", 404)
+
+    conn.execute("""
+        UPDATE tickets
+        SET assigned_to = ?,
+            status = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (
+        assigned_to,
+        STATUS_ASSIGNED,
+        ticket_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    add_audit_log(
+        ticket_id=ticket_id,
+        action="assigned",
+        actor=current_user_display_name(),
+        details=f"Assigned to {assigned_to}"
+    )
+
+    return jsonify({
+        "message": f"Ticket assigned to {assigned_to}"
+    }), 200
+
+
+@app.route("/tickets/<int:ticket_id>/start", methods=["PATCH"])
+def start_ticket(ticket_id):
+    if current_user_role() != "staff":
+        return error_response("Only staff can start assigned tickets", 403)
+
+    conn = get_db_connection()
+
+    ticket = conn.execute("""
+        SELECT *
+        FROM tickets
+        WHERE id = ?
+    """, (ticket_id,)).fetchone()
+
+    if ticket is None:
+        conn.close()
+        return error_response("Ticket not found", 404)
+
+    if ticket["status"] not in [STATUS_PENDING, STATUS_ASSIGNED]:
+        conn.close()
+        return error_response("Only pending or assigned tickets can be started", 400)
+
+    conn.execute("""
+        UPDATE tickets
+        SET status = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (
+        STATUS_IN_PROGRESS,
+        ticket_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    add_audit_log(
+        ticket_id=ticket_id,
+        action="started",
+        actor=current_user_display_name(),
+        details="Ticket started"
+    )
+
+    return jsonify({
+        "message": "Ticket started successfully"
+    }), 200
+
+
 @app.route("/tickets/<int:ticket_id>/submit", methods=["PATCH"])
 def submit_ticket(ticket_id):
-    data = request.get_json()
+    if current_user_role() != "staff":
+        return error_response("Only staff can submit ticket proof", 403)
 
+    data = request.get_json() or {}
     proof_path = data.get("proof_path")
 
     if not proof_path:
@@ -319,10 +490,10 @@ def submit_ticket(ticket_id):
         conn.close()
         return error_response("Ticket not found", 404)
 
-    if ticket["status"] not in  [STATUS_PENDING, STATUS_IN_PROGRESS]:
+    if ticket["status"] not in [STATUS_PENDING, STATUS_IN_PROGRESS]:
         conn.close()
         return error_response("Only pending or in progress tickets can be submitted", 400)
-    
+
     conn.execute("""
         UPDATE tickets
         SET status = ?,
@@ -339,11 +510,11 @@ def submit_ticket(ticket_id):
     conn.close()
 
     add_audit_log(
-    ticket_id=ticket_id,
-    action="submitted",
-    actor="staff",
-    details=f"Proof submitted: {proof_path}"
-)
+        ticket_id=ticket_id,
+        action="submitted",
+        actor=current_user_display_name(),
+        details=f"Proof submitted: {proof_path}"
+    )
 
     return jsonify({
         "message": "Ticket submitted successfully",
@@ -351,8 +522,12 @@ def submit_ticket(ticket_id):
         "status": STATUS_SUBMITTED
     }), 200
 
+
 @app.route("/tickets/<int:ticket_id>/approve", methods=["PATCH"])
 def approve_ticket(ticket_id):
+    if current_user_role() != "manager":
+        return error_response("Only manager can approve tickets", 403)
+
     conn = get_db_connection()
 
     ticket = conn.execute("""
@@ -368,7 +543,7 @@ def approve_ticket(ticket_id):
     if ticket["status"] != STATUS_SUBMITTED:
         conn.close()
         return error_response("Only submitted tickets can be approved", 400)
-    
+
     conn.execute("""
         UPDATE tickets
         SET status = ?,
@@ -383,26 +558,29 @@ def approve_ticket(ticket_id):
     conn.close()
 
     add_audit_log(
-    ticket_id=ticket_id,
-    action="approved",
-    actor="manager",
-    details="Ticket approved by manager"
-)
+        ticket_id=ticket_id,
+        action="approved",
+        actor=current_user_display_name(),
+        details="Ticket approved by manager"
+    )
 
     return jsonify({
         "message": "Ticket approved successfully",
         "ticket_id": ticket_id,
-        "status": "approved"
+        "status": STATUS_APPROVED
     }), 200
+
 
 @app.route("/tickets/<int:ticket_id>/reject", methods=["PATCH"])
 def reject_ticket(ticket_id):
-    data = request.get_json()
+    if current_user_role() != "manager":
+        return error_response("Only manager can return tickets for follow-up", 403)
 
+    data = request.get_json() or {}
     manager_comment = data.get("manager_comment")
 
     if not manager_comment:
-        return error_response("manager_comment is required when rejecting a ticket", 400)
+        return error_response("manager_comment is required when returning a ticket for follow-up", 400)
 
     conn = get_db_connection()
 
@@ -418,7 +596,7 @@ def reject_ticket(ticket_id):
 
     if ticket["status"] != STATUS_SUBMITTED:
         conn.close()
-        return error_response("Only submitted tickets can be rejected", 400)
+        return error_response("Only submitted tickets can be returned for follow-up", 400)
 
     conn.execute("""
         UPDATE tickets
@@ -436,14 +614,14 @@ def reject_ticket(ticket_id):
     conn.close()
 
     add_audit_log(
-    ticket_id=ticket_id,
-    action="rejected",
-    actor="manager",
-    details=manager_comment
+        ticket_id=ticket_id,
+        action="rejected",
+        actor=current_user_display_name(),
+        details=manager_comment
     )
 
     return jsonify({
-        "message": "Ticket rejected successfully",
+        "message": "Ticket returned for follow-up successfully",
         "ticket_id": ticket_id,
         "status": STATUS_REJECTED,
         "manager_comment": manager_comment
@@ -452,8 +630,10 @@ def reject_ticket(ticket_id):
 
 @app.route("/tickets/<int:ticket_id>/resubmit", methods=["PATCH"])
 def resubmit_ticket(ticket_id):
-    data = request.get_json()
+    if current_user_role() != "staff":
+        return error_response("Only staff can resubmit tickets", 403)
 
+    data = request.get_json() or {}
     proof_path = data.get("proof_path")
 
     if not proof_path:
@@ -473,7 +653,7 @@ def resubmit_ticket(ticket_id):
 
     if ticket["status"] != STATUS_REJECTED:
         conn.close()
-        return error_response("Only rejected tickets can be resubmitted", 400)
+        return error_response("Only tickets returned for follow-up can be resubmitted", 400)
 
     conn.execute("""
         UPDATE tickets
@@ -492,17 +672,18 @@ def resubmit_ticket(ticket_id):
     conn.close()
 
     add_audit_log(
-    ticket_id=ticket_id,
-    action="resubmitted",
-    actor="staff",
-    details=f"New proof submitted: {proof_path}"
-)
+        ticket_id=ticket_id,
+        action="resubmitted",
+        actor=current_user_display_name(),
+        details=f"New proof submitted: {proof_path}"
+    )
 
     return jsonify({
         "message": "Ticket resubmitted successfully",
         "ticket_id": ticket_id,
         "status": STATUS_SUBMITTED
     }), 200
+
 
 @app.route("/tickets/<int:ticket_id>/logs", methods=["GET"])
 def get_ticket_logs(ticket_id):
@@ -531,19 +712,26 @@ def get_ticket_logs(ticket_id):
 
     return jsonify(log_list), 200
 
-@app.route("/staff/<staff_name>/failures", methods=["GET"])
-def get_staff_failures(staff_name):
+
+@app.route("/staff/<staff_name>/followups", methods=["GET"])
+def get_staff_followups(staff_name):
+    if current_user_role() != "manager":
+        return error_response("Only manager can view staff follow-up details", 403)
+
     conn = get_db_connection()
 
     rejected_tickets = conn.execute("""
         SELECT *
         FROM tickets
         WHERE assigned_to = ?
-        AND status = 'rejected'
+        AND status = ?
         ORDER BY updated_at DESC
-    """, (staff_name,)).fetchall()
+    """, (
+        staff_name,
+        STATUS_REJECTED
+    )).fetchall()
 
-    failure_count = len(rejected_tickets)
+    followup_count = len(rejected_tickets)
 
     ticket_list = []
 
@@ -561,15 +749,19 @@ def get_staff_failures(staff_name):
 
     return jsonify({
         "staff_name": staff_name,
-        "failure_count": failure_count,
+        "followup_count": followup_count,
         "rejected_tickets": ticket_list
     }), 200
 
-@app.route("/staff/<staff_name>/failure-history", methods=["GET"])
-def get_staff_failure_history(staff_name):
+
+@app.route("/staff/<staff_name>/followup-history", methods=["GET"])
+def get_staff_followup_history(staff_name):
+    if current_user_role() != "manager":
+        return error_response("Only manager can view staff follow-up history", 403)
+
     conn = get_db_connection()
 
-    failure_logs = conn.execute("""
+    followup_logs = conn.execute("""
         SELECT 
             audit_logs.id AS log_id,
             audit_logs.ticket_id,
@@ -582,14 +774,17 @@ def get_staff_failure_history(staff_name):
         FROM audit_logs
         JOIN tickets ON audit_logs.ticket_id = tickets.id
         WHERE tickets.assigned_to = ?
-        AND audit_logs.action = 'rejected'
+        AND audit_logs.action = ?
         ORDER BY audit_logs.created_at DESC
-    """, (staff_name,)).fetchall()
+    """, (
+        staff_name,
+        "rejected"
+    )).fetchall()
 
-    failure_history = []
+    followup_history = []
 
-    for log in failure_logs:
-        failure_history.append({
+    for log in followup_logs:
+        followup_history.append({
             "log_id": log["log_id"],
             "ticket_id": log["ticket_id"],
             "title": log["title"],
@@ -602,9 +797,10 @@ def get_staff_failure_history(staff_name):
 
     return jsonify({
         "staff_name": staff_name,
-        "failure_count": len(failure_history),
-        "failure_history": failure_history
+        "followup_count": len(followup_history),
+        "followup_history": followup_history
     }), 200
+
 
 @app.route("/dashboard/summary", methods=["GET"])
 def dashboard_summary():
@@ -621,22 +817,10 @@ def dashboard_summary():
         GROUP BY status
     """).fetchall()
 
-    staff_failures = conn.execute("""
-        SELECT 
-            tickets.assigned_to,
-            COUNT(audit_logs.id) AS failure_count
-        FROM tickets
-        LEFT JOIN audit_logs 
-            ON tickets.id = audit_logs.ticket_id
-            AND audit_logs.action = 'rejected'
-        GROUP BY tickets.assigned_to
-        ORDER BY failure_count DESC
-    """).fetchall()
-
-    conn.close()
-
     status_summary = {
         "pending": 0,
+        "assigned": 0,
+        "in_progress": 0,
         "submitted": 0,
         "approved": 0,
         "rejected": 0
@@ -645,105 +829,37 @@ def dashboard_summary():
     for row in status_counts:
         status_summary[row["status"]] = row["count"]
 
-    staff_failure_list = []
+    staff_followup_list = []
 
-    for row in staff_failures:
-        staff_failure_list.append({
-            "staff_name": row["assigned_to"],
-            "failure_count": row["failure_count"]
-        })
+    if current_user_role() == "manager":
+        staff_followups = conn.execute("""
+            SELECT 
+                tickets.assigned_to,
+                COUNT(audit_logs.id) AS followup_count
+            FROM tickets
+            LEFT JOIN audit_logs 
+                ON tickets.id = audit_logs.ticket_id
+                AND audit_logs.action = ?
+            WHERE tickets.assigned_to IS NOT NULL
+            GROUP BY tickets.assigned_to
+            ORDER BY followup_count DESC
+        """, (
+            "rejected",
+        )).fetchall()
+
+        for row in staff_followups:
+            staff_followup_list.append({
+                "staff_name": row["assigned_to"],
+                "followup_count": row["followup_count"]
+            })
+
+    conn.close()
 
     return jsonify({
         "total_tickets": total_tickets,
         "status_summary": status_summary,
-        "staff_failures": staff_failure_list
+        "staff_followups": staff_followup_list
     }), 200
-
-
-@app.route("/tickets/<int:ticket_id>/start", methods=["PATCH"])
-def start_ticket(ticket_id):
-    conn = get_db_connection()
-
-    ticket = conn.execute("""
-        SELECT *
-        FROM tickets
-        WHERE id = ?
-    """, (ticket_id,)).fetchone()
-
-    if ticket is None:
-        conn.close()
-        return  error_response("Ticket not found", 404)
-
-    if ticket["status"] not in [STATUS_PENDING, STATUS_ASSIGNED]:
-        conn.close()
-        return error_response("Only pending tickets can be started", 400)
-
-    conn.execute("""
-        UPDATE tickets
-        SET status = ?,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-    """, (
-        STATUS_IN_PROGRESS,
-        ticket_id
-    ))
-
-    conn.commit()
-    conn.close()
-
-    add_audit_log(
-        ticket_id=ticket_id,
-        action="started",
-        actor="staff",
-        details="Ticket started"
-    )
-
-    return jsonify({
-        "message": "Ticket started successfully"
-    }), 200
-
-@app.route("/tickets/<int:ticket_id>/assign", methods=["PATCH"])
-def assign_ticket(ticket_id):
-    data = request.get_json()
-    assigned_to = data.get("assigned_to")
-
-    if not assigned_to:
-        return error_response("assigned_to is required", 400)
-
-    conn = get_db_connection()
-
-    ticket = conn.execute("""
-        SELECT *
-        FROM tickets
-        WHERE id = ?
-    """, (ticket_id,)).fetchone()
-
-    if ticket is None:
-        conn.close()
-        return error_response("Ticket not found", 404)
-
-    conn.execute("""
-        UPDATE tickets
-        SET assigned_to = ?,
-            status = ?,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-    """, (assigned_to, STATUS_ASSIGNED, ticket_id))
-
-    conn.commit()
-    conn.close()
-
-    add_audit_log(
-        ticket_id=ticket_id,
-        action="assigned",
-        actor="manager",
-        details=f"Assigned to {assigned_to}"
-    )
-
-    return jsonify({
-        "message": f"Ticket assigned to {assigned_to}"
-    }), 200
-
 
 
 if __name__ == "__main__":

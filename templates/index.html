@@ -74,12 +74,82 @@
         button:hover {
             background: #444;
         }
+        .action-bar {
+            margin-bottom: 24px;
+        }
+
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .modal-box {
+            background: white;
+            width: 520px;
+            max-width: 90%;
+            margin: 80px auto;
+            padding: 24px;
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-box input,
+        .modal-box textarea,
+        .modal-box select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            margin-bottom: 14px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .modal-actions {
+            margin-top: 12px;
+        }
+
+        .secondary-button {
+            background: #777;
+        }
+
+        .secondary-button:hover {
+            background: #555;
+        }
+
+        .hint {
+            color: #666;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        
     </style>
 </head>
 
 <body>
 
 <h1>Task Ticket Dashboard</h1>
+
+<div class="login-box">
+    <h2>Login</h2>
+
+    <input id="usernameInput" type="text" placeholder="Username">
+    <input id="passwordInput" type="password" placeholder="Password">
+
+    <button onclick="loginUser()">Login</button>
+    <button onclick="logoutUser()">Logout</button>
+
+    <div class="hint">
+        Demo accounts: manager / 1234, staffa / 1234, staffb / 1234
+    </div>
+</div>
+
 <h3 id="userInfo">Checking user</h3>
 
 <div id="managerSection" style="display: none;">
@@ -87,8 +157,56 @@
     <p>You can assign, approve and reject tickets.</p>
 </div>
 
-<div class="section">
+<div class="section action-bar">
+    <button id="createActionButton" onclick="openCreateTicketModal()">
+        + Create Task
+    </button>
+
     <button onclick="loadDashboard()">Refresh Dashboard</button>
+</div>
+
+<div id="createTicketModal" class="modal-backdrop">
+    <div class="modal-box">
+        <h2 id="createModalTitle">Create Task</h2>
+
+        <label>Type</label>
+        <input id="ticketTypeInput" type="text" placeholder="e.g. repair, issue, maintenance">
+
+        <label>Title</label>
+        <input id="ticketTitleInput" type="text" placeholder="Short title">
+
+        <label>Description</label>
+        <textarea id="ticketDescriptionInput"
+                  rows="4"
+                  placeholder="Describe the task or issue"></textarea>
+
+        <div id="assignToField">
+            <label>Assign To</label>
+            <input id="assignedToInput" type="text" placeholder="e.g. Staff A">
+        </div>
+
+        <label>Visibility</label>
+        <select id="visibilityInput">
+            <option value="public">Public</option>
+            <option value="manager_only">Manager only</option>
+        </select>
+
+        <label>Proof Type</label>
+        <select id="proofTypeInput">
+            <option value="photo">Photo</option>
+            <option value="note">Note</option>
+            <option value="receipt">Receipt</option>
+        </select>
+
+        <div class="modal-actions">
+            <button id="createSubmitButton" onclick="createTicket()">Create Task</button>
+            <button class="secondary-button" onclick="closeCreateTicketModal()">Cancel</button>
+        </div>
+
+        <div id="createModalHint" class="hint">
+            Manager can create and assign tasks to staff.
+        </div>
+    </div>
 </div>
 
 <div class="section">
@@ -96,17 +214,33 @@
     <div id="cards"></div>
 </div>
 
-<div class="section">
-    <h2>Staff Failures</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Staff</th>
-                <th>Failures</th>
-            </tr>
-        </thead>
-        <tbody id="staffTable"></tbody>
-    </table>
+<div id="staffFollowupSection" class="section" style="display: none;">
+    <h2>Manager Review</h2>
+    <button onclick="openStaffFollowupModal()">View Staff Follow-up</button>
+</div>
+
+<div id="staffFollowupModal" class="modal-backdrop">
+    <div class="modal-box">
+        <h2>Staff Follow-up Details</h2>
+
+        <p class="hint">
+            This shows assigned tickets that were rejected by the manager and may require correction, resubmission, or coaching.
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Staff</th>
+                    <th>Rejected / Follow-up Count</th>
+                </tr>
+            </thead>
+            <tbody id="staffFollowupTable"></tbody>
+        </table>
+
+        <div class="modal-actions">
+            <button class="secondary-button" onclick="closeStaffFollowupModal()">Close</button>
+        </div>
+    </div>
 </div>
 
 <div class="section">
@@ -128,16 +262,193 @@
 </div>
 
 <script>
+async function loginUser() {
+    const username = document.getElementById("usernameInput").value;
+    const password = document.getElementById("passwordInput").value;
+
+    if (!username || !password) {
+        alert("Please enter username and password");
+        return;
+    }
+
+    const res = await fetch("/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            username: username,
+            password: password
+        })
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+        alert(result.error || "Login failed");
+        return;
+    }
+
+    alert("Logged in as " + result.display_name);
+
+    document.getElementById("usernameInput").value = "";
+    document.getElementById("passwordInput").value = "";
+
+    await loadUser();
+    loadDashboard();
+}
+
+
+
+async function logoutUser() {
+    const res = await fetch("/logout", {
+        method: "POST"
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+        alert(result.error || "Logout failed");
+        return;
+    }
+
+    alert(result.message);
+
+    await loadUser();
+    loadDashboard();
+} 
+
+function setupCreateActionButton() {
+    const button = document.getElementById("createActionButton");
+
+    if (!button) {
+        return;
+    }
+
+    if (window.currentUserRole === "manager") {
+        button.innerText = "+ Create Task";
+        button.style.display = "inline-block";
+    } else if (window.currentUserRole === "staff") {
+        button.innerText = "+ Report Issue";
+        button.style.display = "inline-block";
+    } else {
+        button.innerText = "+ Create / Report";
+        button.style.display = "inline-block";
+    }
+}
+
+function openCreateTicketModal() {
+    if (!window.currentUserRole) {
+    alert("Please login first to create a task or report an issue.");
+    return;
+    }
+
+    const modal = document.getElementById("createTicketModal");
+    const title = document.getElementById("createModalTitle");
+    const submitButton = document.getElementById("createSubmitButton");
+    const hint = document.getElementById("createModalHint");
+    const assignToField = document.getElementById("assignToField");
+
+    if (window.currentUserRole === "manager") {
+        title.innerText = "Create and Assign Task";
+        submitButton.innerText = "Create Task";
+        hint.innerText = "Manager can create a task and assign it to a staff member.";
+        assignToField.style.display = "block";
+    } else if (window.currentUserRole === "staff") {
+        title.innerText = "Report an Issue";
+        submitButton.innerText = "Submit Report";
+        hint.innerText = "Staff reports an issue to Manager. Manager will assign it later.";
+        assignToField.style.display = "none";
+        document.getElementById("assignedToInput").value = "";
+    }
+
+    modal.style.display = "block";
+}
+
+function closeCreateTicketModal() {
+    document.getElementById("createTicketModal").style.display = "none";
+}
+
+function openStaffFollowupModal() {
+    if (window.currentUserRole !== "manager") {
+        alert("Only manager can view staff follow-up details.");
+        return;
+    }
+
+    document.getElementById("staffFollowupModal").style.display = "block";
+}
+
+function closeStaffFollowupModal() {
+    document.getElementById("staffFollowupModal").style.display = "none";
+}
+
+async function createTicket() {
+    const ticketType = document.getElementById("ticketTypeInput").value || "task";
+    const title = document.getElementById("ticketTitleInput").value;
+    const description = document.getElementById("ticketDescriptionInput").value;
+    const assignedTo = document.getElementById("assignedToInput").value;
+    const visibility = document.getElementById("visibilityInput").value;
+    const proofType = document.getElementById("proofTypeInput").value;
+
+    if (!title || !description) {
+        alert("Title and description are required");
+        return;
+    }
+
+    const requestBody = {
+        ticket_type: ticketType,
+        title: title,
+        description: description,
+        visibility: visibility,
+        proof_required: 1,
+        proof_type: proofType
+    };
+
+    if (window.currentUserRole === "manager") {
+        requestBody.assigned_to = assignedTo || null;
+    }
+
+    const res = await fetch("/tickets", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestBody)
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+        alert(result.error || "Failed to create ticket");
+        return;
+    }
+
+    alert("Created successfully. Ticket ID: " + result.ticket_id);
+
+    document.getElementById("ticketTypeInput").value = "";
+    document.getElementById("ticketTitleInput").value = "";
+    document.getElementById("ticketDescriptionInput").value = "";
+    document.getElementById("assignedToInput").value = "";
+    document.getElementById("visibilityInput").value = "public";
+    document.getElementById("proofTypeInput").value = "photo";
+
+    closeCreateTicketModal();
+    loadTickets();
+    loadSummary();
+}
+
 async function loadUser() {
     const res = await fetch("/me");
     const user = await res.json();
 
     if (!user.logged_in) {
-        document.getElementById("userInfo").innerText = "Not logged in";
+        document.getElementById("userInfo").innerText = "Logged out - View only mode";
         document.getElementById("managerSection").style.display = "none";
+        document.getElementById("staffFollowupSection").style.display = "none";
         window.currentUserRole = null;
+        setupCreateActionButton();
         return;
-    }
+        }
 
     window.currentUserRole = user.role;
 
@@ -146,9 +457,14 @@ async function loadUser() {
 
     if (user.role === "manager") {
         document.getElementById("managerSection").style.display = "block";
-    } else {
+        document.getElementById("staffFollowupSection").style.display = "block";
+        } 
+    else {
         document.getElementById("managerSection").style.display = "none";
-    }
+        document.getElementById("staffFollowupSection").style.display = "none";
+        }
+
+    setupCreateActionButton();
 }
 
 async function loadSummary() {
@@ -192,16 +508,26 @@ async function loadSummary() {
 
     let rows = "";
 
-    data.staff_failures.forEach(staff => {
+    const followups = data.staff_followups || [];
+
+    followups.forEach(staff => {
         rows += `
             <tr>
-                <td>${staff.staff_name}</td>
-                <td>${staff.failure_count}</td>
+                <td>${staff.staff_name || "Unassigned"}</td>
+                <td>${staff.followup_count}</td>
             </tr>
         `;
     });
 
-    document.getElementById("staffTable").innerHTML = rows;
+    const staffFollowupTable = document.getElementById("staffFollowupTable");
+
+    if (staffFollowupTable) {
+        staffFollowupTable.innerHTML = rows || `
+            <tr>
+                <td colspan="2">No staff follow-up items recorded.</td>
+            </tr>
+        `;
+    }
 }
 
 async function loadTickets() {
@@ -219,25 +545,31 @@ async function loadTickets() {
                     <button onclick="approveTicket(${ticket.id})">Approve</button>
                     <button onclick="rejectTicket(${ticket.id})">Reject</button>
                 `;
-            } else {
+                } 
+            else {
                 actionButton = `
                     <button onclick="assignTicket(${ticket.id})">Assign</button>
                 `;
+                }
+            } 
+            else if (window.currentUserRole === "staff") {
+                if(ticket.status === "pending" || ticket.status === "assigned") {
+                    actionButton = `
+                        <button onclick="startTicket(${ticket.id})">Start</button>
+                    `;
+                } 
+                else if (ticket.status === "in_progress") {
+                    actionButton = `
+                        <button onclick="submitTicket(${ticket.id})">Submit Proof</button>
+                    `;
+                    } 
+                else {
+                    actionButton = "View only";
+                    }
+        } 
+        else {
+            actionButton = "View only";
             }
-        } else if (window.currentUserRole === "staff") {
-            if(ticket.status === "pending" || ticket.status === "assigned") {
-                actionButton = `
-                    <button onclick="startTicket(${ticket.id})">Start</button>
-                `;
-            }else if (ticket.status === "in_progress") {
-                actionButton = `
-                    <button onclick="submitTicket(${ticket.id})">Submit Proof</button>
-                `;
-            } else{
-                actionButton = "View only";
-            }  
-
-        }
 
         rows += `
             <tr>
