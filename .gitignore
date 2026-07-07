@@ -4,12 +4,18 @@ __pycache__/
 
 # Virtual environments
 .venv/
+.venv-*/
 venv/
 
 # Local databases and generated data
 *.db
 *.sqlite
 *.sqlite3
+
+# Curl session cookie files
+manager.txt
+staff.txt
+staffb.txt
 
 # Local uploads
 uploads/
