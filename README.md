@@ -2,13 +2,15 @@
 
 A basic helpdesk-style ticket management system built to practise support request intake, ticket tracking, approval workflow, escalation-ready notes and service record discipline.
 
-This project was created as part of my ICT support portfolio to demonstrate how I think about structured support workflows, not as a production ITSM platform.
+This project was created as part of my ICT support portfolio to demonstrate how I think about structured support workflows. It is a learning project and is not intended to be a production ITSM platform.
+
+No real customer, staff or business data is included in this repository.
 
 ## Purpose
 
-In customer-facing technical support, the issue is not only solving the problem. It is also important to record the request clearly, track the status, capture useful evidence, follow up, and leave enough information for another person to understand what happened.
+In customer-facing technical support, solving the issue is only one part of good service delivery. It is also important to record the request clearly, track the status, capture useful notes, follow up, and leave enough information for another person to understand what happened.
 
-This project was designed to practise those behaviours in a simple ticket workflow.
+This project was designed to practise those behaviours through a simple ticket workflow.
 
 ## Support Workflow Practised
 
@@ -38,7 +40,7 @@ The system is designed around a basic support lifecycle:
 
 ## Why This Matters for ICT Support
 
-This project reflects the type of thinking required in a help desk or ICT support environment:
+This project reflects the type of workflow discipline required in a help desk or ICT support environment:
 
 * Logging support requests clearly
 * Capturing useful service notes
@@ -50,11 +52,17 @@ This project reflects the type of thinking required in a help desk or ICT suppor
 
 ## Example Use Case
 
-A staff member is assigned a device check or support task.
-They complete the task and submit supporting notes or evidence.
-A manager reviews the submission and either approves it or rejects it with feedback.
-If rejected, the staff member can correct the issue and resubmit.
-The system keeps a record of actions so the workflow can be reviewed later.
+A staff member is assigned a device check or support task. They complete the task and submit supporting notes or evidence. A manager reviews the submission and either approves it or rejects it with feedback. If rejected, the staff member can correct the issue and resubmit. The system keeps a record of actions so the workflow can be reviewed later.
+
+## Screenshots
+
+Screenshots can be added here to show:
+
+* Dashboard summary
+* Ticket intake form
+* Ticket status tracking
+* Approval / rejection workflow
+* Audit history
 
 ## Technology Used
 
@@ -62,6 +70,21 @@ The system keeps a record of actions so the workflow can be reviewed later.
 * Flask
 * SQLite
 * HTML templates
+
+## How to Run Locally
+
+1. Clone the repository
+2. Create and activate a virtual environment
+3. Install the required dependencies
+4. Run the Flask application
+5. Open the local development server in a browser
+
+Example:
+
+```bash
+pip install -r requirements.txt
+python app.py
+```
 
 ## Current Status
 
