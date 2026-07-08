@@ -1,6 +1,7 @@
 # Python cache files
 __pycache__/
 *.py[cod]
+.pytest_cache/
 
 # Virtual environments
 .venv/
@@ -19,6 +20,9 @@ staffb.txt
 
 # Local uploads
 uploads/
+
+# Private planning and business design notes
+docs/superpowers/
 
 # Environment variables and local secrets
 .env

@@ -1,8 +1,11 @@
+import os
+import secrets
+
 from flask import Flask, request, jsonify, render_template, session, url_for
 from database import init_db, get_db_connection
 
 app = Flask(__name__)
-app.secret_key = "dev_secret_key_change_later"
+app.secret_key = os.environ.get("FLASK_SECRET_KEY") or secrets.token_hex(32)
 
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
@@ -34,6 +37,192 @@ STATUS_IN_PROGRESS = "in_progress"
 STATUS_SUBMITTED = "submitted"
 STATUS_APPROVED = "approved"
 STATUS_REJECTED = "rejected"
+STATUS_CLOSED = "closed"
+STATUS_VOIDED = "voided"
+
+
+DEMO_TICKETS = [
+    {
+        "ticket_type": "pos_store_system",
+        "category": "pos_store_system",
+        "priority": "urgent",
+        "title": "Front counter printer cannot print labels",
+        "description": "Fake demo ticket: label printer stopped during a busy service period. Staff need escalation notes and a clear workaround.",
+        "reported_by": "Staff A",
+        "reported_to": "Manager",
+        "assigned_to": "Staff B",
+        "visibility": "public",
+        "status": STATUS_SUBMITTED,
+        "proof_type": "photo",
+        "proof_path": "uploads/demo-printer-label-proof.jpg",
+        "staff_note": "Checked paper path, restarted workstation, attached printer queue screenshot.",
+        "manager_comment": None,
+        "created_at": "2026-07-08 08:15:00",
+        "updated_at": "2026-07-08 09:05:00"
+    },
+    {
+        "ticket_type": "customer_complaint",
+        "category": "customer_complaint",
+        "priority": "urgent",
+        "title": "Customer complaint about refund over AUD 100",
+        "description": "Fake demo ticket: customer is requesting a refund above the staff approval threshold.",
+        "reported_by": "Staff B",
+        "reported_to": "Manager",
+        "assigned_to": "Staff A",
+        "visibility": "manager_only",
+        "status": STATUS_REJECTED,
+        "proof_type": "receipt",
+        "proof_path": "uploads/demo-refund-receipt.pdf",
+        "staff_note": "Customer asked for immediate decision. Receipt reference recorded for manager review.",
+        "manager_comment": "Please add final resolution options before customer follow-up.",
+        "created_at": "2026-07-08 08:35:00",
+        "updated_at": "2026-07-08 09:20:00"
+    },
+    {
+        "ticket_type": "repair",
+        "category": "repair",
+        "priority": "normal",
+        "title": "Student iPad screen check",
+        "description": "Fake demo ticket: iPad screen touch response is inconsistent after customer drop-off.",
+        "reported_by": "Manager",
+        "reported_to": None,
+        "assigned_to": "Staff A",
+        "visibility": "public",
+        "status": STATUS_IN_PROGRESS,
+        "proof_type": "note",
+        "proof_path": None,
+        "staff_note": "Initial diagnostics started. Waiting for second test after restart.",
+        "manager_comment": None,
+        "created_at": "2026-07-08 09:00:00",
+        "updated_at": "2026-07-08 09:40:00"
+    },
+    {
+        "ticket_type": "warranty_return",
+        "category": "warranty_return",
+        "priority": "high",
+        "title": "Warranty return needs manager approval",
+        "description": "Fake demo ticket: accessory return is inside warranty period but needs condition check.",
+        "reported_by": "Staff A",
+        "reported_to": "Manager",
+        "assigned_to": "Staff B",
+        "visibility": "public",
+        "status": STATUS_APPROVED,
+        "proof_type": "photo",
+        "proof_path": "uploads/demo-warranty-condition.jpg",
+        "staff_note": "Photos uploaded. Product condition is consistent with warranty claim.",
+        "manager_comment": "Approved for warranty exchange after proof review.",
+        "created_at": "2026-07-08 09:25:00",
+        "updated_at": "2026-07-08 10:10:00"
+    },
+    {
+        "ticket_type": "staff_report",
+        "category": "staff_report",
+        "priority": "high",
+        "title": "Staff report: SOP discount question",
+        "description": "Fake demo ticket: staff asked which discount rule applies when manager is unavailable.",
+        "reported_by": "Staff B",
+        "reported_to": "Manager",
+        "assigned_to": "Staff A, Staff B",
+        "visibility": "public",
+        "status": STATUS_ASSIGNED,
+        "proof_type": "note",
+        "proof_path": None,
+        "staff_note": None,
+        "manager_comment": "Use SOP guidance first, then escalate if the customer asks for an exception.",
+        "created_at": "2026-07-08 10:00:00",
+        "updated_at": "2026-07-08 10:05:00"
+    },
+    {
+        "ticket_type": "customer_feedback",
+        "category": "customer_feedback",
+        "priority": "low",
+        "title": "Customer feedback about pickup communication",
+        "description": "Fake demo ticket: customer suggested clearer repair pickup timing messages.",
+        "reported_by": "Staff A",
+        "reported_to": "Manager",
+        "assigned_to": "Staff B",
+        "visibility": "public",
+        "status": STATUS_CLOSED,
+        "proof_type": "note",
+        "proof_path": "uploads/demo-feedback-note.txt",
+        "staff_note": "Customer feedback recorded and template wording updated.",
+        "manager_comment": "Closed after message template was updated.",
+        "created_at": "2026-07-08 10:20:00",
+        "updated_at": "2026-07-08 10:55:00"
+    },
+    {
+        "ticket_type": "stock_inventory",
+        "category": "stock_inventory",
+        "priority": "normal",
+        "title": "Stock count mismatch for charging cables",
+        "description": "Fake demo ticket: inventory count does not match shelf quantity.",
+        "reported_by": "Manager",
+        "reported_to": None,
+        "assigned_to": None,
+        "visibility": "public",
+        "status": STATUS_PENDING,
+        "proof_type": "note",
+        "proof_path": None,
+        "staff_note": None,
+        "manager_comment": None,
+        "created_at": "2026-07-08 11:00:00",
+        "updated_at": "2026-07-08 11:00:00"
+    },
+    {
+        "ticket_type": "general_task",
+        "category": "general_task",
+        "priority": "low",
+        "title": "Duplicate cleaning checklist task",
+        "description": "Fake demo ticket: duplicate task was created during workflow review and should stay visible as voided history.",
+        "reported_by": "Manager",
+        "reported_to": None,
+        "assigned_to": None,
+        "visibility": "public",
+        "status": STATUS_VOIDED,
+        "proof_type": "note",
+        "proof_path": None,
+        "staff_note": None,
+        "manager_comment": "Voided because the task was duplicated during demo setup.",
+        "created_at": "2026-07-08 11:15:00",
+        "updated_at": "2026-07-08 11:25:00"
+    },
+    {
+        "ticket_type": "repair",
+        "category": "repair",
+        "priority": "high",
+        "title": "Phone battery replacement quality check",
+        "description": "Fake demo ticket: battery replacement needs final quality check before customer pickup.",
+        "reported_by": "Manager",
+        "reported_to": None,
+        "assigned_to": "Staff A",
+        "visibility": "public",
+        "status": STATUS_SUBMITTED,
+        "proof_type": "photo",
+        "proof_path": "uploads/demo-battery-test.jpg",
+        "staff_note": "Battery replaced, charging tested, final photo attached.",
+        "manager_comment": None,
+        "created_at": "2026-07-08 11:30:00",
+        "updated_at": "2026-07-08 12:05:00"
+    },
+    {
+        "ticket_type": "pos_store_system",
+        "category": "pos_store_system",
+        "priority": "urgent",
+        "title": "EFTPOS terminal intermittent connection",
+        "description": "Fake demo ticket: payment terminal intermittently disconnects and may affect customer checkout.",
+        "reported_by": "Staff A",
+        "reported_to": "Manager",
+        "assigned_to": "Staff A, Staff B",
+        "visibility": "public",
+        "status": STATUS_IN_PROGRESS,
+        "proof_type": "note",
+        "proof_path": None,
+        "staff_note": "Checked cable, restarted terminal, monitoring next transaction window.",
+        "manager_comment": "Escalate to provider if the next disconnect happens.",
+        "created_at": "2026-07-08 12:10:00",
+        "updated_at": "2026-07-08 12:35:00"
+    }
+]
 
 
 init_db()
@@ -53,6 +242,77 @@ def current_user_role():
 
 def current_user_display_name():
     return session.get("display_name", "Unknown")
+
+
+def split_assignees(assigned_to):
+    if not assigned_to:
+        return []
+
+    return [
+        name.strip()
+        for name in assigned_to.split(",")
+        if name.strip()
+    ]
+
+
+def normalize_assigned_to(assigned_to):
+    if not assigned_to:
+        return None
+
+    names = split_assignees(assigned_to)
+
+    unique_names = []
+
+    for name in names:
+        if name not in unique_names:
+            unique_names.append(name)
+
+    if not unique_names:
+        return None
+
+    return ", ".join(unique_names)
+
+
+def next_status_after_assignment(current_status, assigned_to):
+    if current_status == STATUS_PENDING:
+        if assigned_to:
+            return STATUS_ASSIGNED
+        return STATUS_PENDING
+
+    if current_status == STATUS_ASSIGNED:
+        if assigned_to:
+            return STATUS_ASSIGNED
+        return STATUS_PENDING
+
+    return current_status
+
+
+def is_terminal_status(status):
+    return status in [STATUS_CLOSED, STATUS_VOIDED]
+
+
+def serialize_ticket(ticket):
+    return {
+        "id": ticket["id"],
+        "ticket_type": ticket["ticket_type"],
+        "category": ticket["category"],
+        "priority": ticket["priority"],
+        "title": ticket["title"],
+        "description": ticket["description"],
+        "reported_by": ticket["reported_by"],
+        "reported_to": ticket["reported_to"],
+        "assigned_to": ticket["assigned_to"],
+        "visibility": ticket["visibility"],
+        "status": ticket["status"],
+        "proof_required": ticket["proof_required"],
+        "proof_type": ticket["proof_type"],
+        "proof_path": ticket["proof_path"],
+        "staff_note": ticket["staff_note"],
+        "manager_comment": ticket["manager_comment"],
+        "is_demo": ticket["is_demo"],
+        "created_at": ticket["created_at"],
+        "updated_at": ticket["updated_at"]
+    }
 
 
 def error_response(message, status_code):
@@ -209,6 +469,8 @@ def create_ticket():
     data = request.get_json() or {}
 
     ticket_type = data.get("ticket_type", "task")
+    category = data.get("category", ticket_type or "general_task")
+    priority = data.get("priority", "normal")
     title = data.get("title")
     description = data.get("description")
     reported_by = current_user_display_name()
@@ -219,7 +481,7 @@ def create_ticket():
         assigned_to = None
     else:
         reported_to = None
-        assigned_to = data.get("assigned_to")
+        assigned_to = normalize_assigned_to(data.get("assigned_to"))
 
     visibility = data.get("visibility", "public")
     proof_required = data.get("proof_required", 1)
@@ -233,6 +495,8 @@ def create_ticket():
     cursor = conn.execute("""
         INSERT INTO tickets (
             ticket_type,
+            category,
+            priority,
             title,
             description,
             reported_by,
@@ -242,9 +506,11 @@ def create_ticket():
             proof_required,
             proof_type
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         ticket_type,
+        category,
+        priority,
         title,
         description,
         reported_by,
@@ -290,37 +556,36 @@ def get_tickets():
             FROM tickets
             ORDER BY created_at DESC
         """).fetchall()
-    else:
+
+    elif role == "staff":
         tickets = conn.execute("""
             SELECT *
             FROM tickets
             WHERE visibility = 'public'
                OR reported_by = ?
                OR assigned_to = ?
+               OR assigned_to LIKE ?
             ORDER BY created_at DESC
-        """, (display_name, display_name)).fetchall()
+        """, (
+            display_name,
+            display_name,
+            f"%{display_name}%"
+        )).fetchall()
+
+    else:
+        tickets = conn.execute("""
+            SELECT *
+            FROM tickets
+            WHERE visibility = 'public'
+            ORDER BY created_at DESC
+        """).fetchall()
 
     conn.close()
 
     ticket_list = []
 
     for ticket in tickets:
-        ticket_list.append({
-            "id": ticket["id"],
-            "ticket_type": ticket["ticket_type"],
-            "title": ticket["title"],
-            "description": ticket["description"],
-            "reported_by": ticket["reported_by"],
-            "reported_to": ticket["reported_to"],
-            "assigned_to": ticket["assigned_to"],
-            "visibility": ticket["visibility"],
-            "status": ticket["status"],
-            "proof_required": ticket["proof_required"],
-            "proof_path": ticket["proof_path"],
-            "manager_comment": ticket["manager_comment"],
-            "created_at": ticket["created_at"],
-            "updated_at": ticket["updated_at"]
-        })
+        ticket_list.append(serialize_ticket(ticket))
 
     return jsonify(ticket_list), 200
 
@@ -353,34 +618,15 @@ def get_ticket(ticket_id):
 
     conn.close()
 
-    return jsonify({
-        "id": ticket["id"],
-        "ticket_type": ticket["ticket_type"],
-        "title": ticket["title"],
-        "description": ticket["description"],
-        "reported_by": ticket["reported_by"],
-        "reported_to": ticket["reported_to"],
-        "assigned_to": ticket["assigned_to"],
-        "visibility": ticket["visibility"],
-        "status": ticket["status"],
-        "proof_required": ticket["proof_required"],
-        "proof_path": ticket["proof_path"],
-        "manager_comment": ticket["manager_comment"],
-        "created_at": ticket["created_at"],
-        "updated_at": ticket["updated_at"]
-    }), 200
+    return jsonify(serialize_ticket(ticket)), 200
 
 
-@app.route("/tickets/<int:ticket_id>/assign", methods=["PATCH"])
-def assign_ticket(ticket_id):
+@app.route("/tickets/<int:ticket_id>", methods=["PATCH"])
+def update_ticket(ticket_id):
     if current_user_role() != "manager":
-        return error_response("Only manager can assign tickets", 403)
+        return error_response("Only manager can edit tickets", 403)
 
     data = request.get_json() or {}
-    assigned_to = data.get("assigned_to")
-
-    if not assigned_to:
-        return error_response("assigned_to is required", 400)
 
     conn = get_db_connection()
 
@@ -394,6 +640,116 @@ def assign_ticket(ticket_id):
         conn.close()
         return error_response("Ticket not found", 404)
 
+    if is_terminal_status(ticket["status"]):
+        conn.close()
+        return error_response("Closed or voided tickets cannot be edited", 400)
+
+    ticket_type = data.get("ticket_type", ticket["ticket_type"])
+    category = data.get("category", ticket["category"])
+    priority = data.get("priority", ticket["priority"])
+    title = data.get("title", ticket["title"])
+    description = data.get("description", ticket["description"])
+    visibility = data.get("visibility", ticket["visibility"])
+    proof_required = data.get("proof_required", ticket["proof_required"])
+    proof_type = data.get("proof_type", ticket["proof_type"])
+
+    if "assigned_to" in data:
+        assigned_to = normalize_assigned_to(data.get("assigned_to"))
+    else:
+        assigned_to = ticket["assigned_to"]
+
+    if not title or not description:
+        conn.close()
+        return error_response("Title and description are required", 400)
+
+    new_status = next_status_after_assignment(
+        current_status=ticket["status"],
+        assigned_to=assigned_to
+    )
+
+    conn.execute("""
+        UPDATE tickets
+        SET ticket_type = ?,
+            category = ?,
+            priority = ?,
+            title = ?,
+            description = ?,
+            assigned_to = ?,
+            visibility = ?,
+            proof_required = ?,
+            proof_type = ?,
+            status = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (
+        ticket_type,
+        category,
+        priority,
+        title,
+        description,
+        assigned_to,
+        visibility,
+        proof_required,
+        proof_type,
+        new_status,
+        ticket_id
+    ))
+
+    conn.commit()
+    updated_ticket = conn.execute("""
+        SELECT *
+        FROM tickets
+        WHERE id = ?
+    """, (ticket_id,)).fetchone()
+    conn.close()
+
+    add_audit_log(
+        ticket_id=ticket_id,
+        action="updated",
+        actor=current_user_display_name(),
+        details="Ticket details updated"
+    )
+
+    return jsonify({
+        "message": "Ticket updated successfully",
+        "ticket": serialize_ticket(updated_ticket)
+    }), 200
+
+
+@app.route("/tickets/<int:ticket_id>/assign", methods=["PATCH"])
+def assign_ticket(ticket_id):
+    if current_user_role() != "manager":
+        return error_response("Only manager can assign tickets", 403)
+
+    data = request.get_json() or {}
+
+    assigned_to = normalize_assigned_to(data.get("assigned_to"))
+
+    conn = get_db_connection()
+
+    ticket = conn.execute("""
+        SELECT *
+        FROM tickets
+        WHERE id = ?
+    """, (ticket_id,)).fetchone()
+
+    if ticket is None:
+        conn.close()
+        return error_response("Ticket not found", 404)
+
+    if ticket["status"] == STATUS_APPROVED:
+        conn.close()
+        return error_response("Approved tickets cannot be reassigned", 400)
+
+    if is_terminal_status(ticket["status"]):
+        conn.close()
+        return error_response("Closed or voided tickets cannot be reassigned", 400)
+
+    new_status = next_status_after_assignment(
+        current_status=ticket["status"],
+        assigned_to=assigned_to
+    )
+
     conn.execute("""
         UPDATE tickets
         SET assigned_to = ?,
@@ -402,7 +758,7 @@ def assign_ticket(ticket_id):
         WHERE id = ?
     """, (
         assigned_to,
-        STATUS_ASSIGNED,
+        new_status,
         ticket_id
     ))
 
@@ -413,11 +769,13 @@ def assign_ticket(ticket_id):
         ticket_id=ticket_id,
         action="assigned",
         actor=current_user_display_name(),
-        details=f"Assigned to {assigned_to}"
+        details=f"Assignment updated to {assigned_to or 'Unassigned'}"
     )
 
     return jsonify({
-        "message": f"Ticket assigned to {assigned_to}"
+        "message": f"Assignment updated to {assigned_to or 'Unassigned'}",
+        "assigned_to": assigned_to,
+        "status": new_status
     }), 200
 
 
@@ -473,7 +831,9 @@ def submit_ticket(ticket_id):
         return error_response("Only staff can submit ticket proof", 403)
 
     data = request.get_json() or {}
+    proof_type = data.get("proof_type") or "photo"
     proof_path = data.get("proof_path")
+    staff_note = data.get("staff_note")
 
     if not proof_path:
         return error_response("proof_path is required", 400)
@@ -497,12 +857,16 @@ def submit_ticket(ticket_id):
     conn.execute("""
         UPDATE tickets
         SET status = ?,
+            proof_type = ?,
             proof_path = ?,
+            staff_note = ?,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
     """, (
         STATUS_SUBMITTED,
+        proof_type,
         proof_path,
+        staff_note,
         ticket_id
     ))
 
@@ -513,13 +877,16 @@ def submit_ticket(ticket_id):
         ticket_id=ticket_id,
         action="submitted",
         actor=current_user_display_name(),
-        details=f"Proof submitted: {proof_path}"
+        details=f"Proof submitted ({proof_type}): {proof_path}"
     )
 
     return jsonify({
         "message": "Ticket submitted successfully",
         "ticket_id": ticket_id,
-        "status": STATUS_SUBMITTED
+        "status": STATUS_SUBMITTED,
+        "proof_type": proof_type,
+        "proof_path": proof_path,
+        "staff_note": staff_note
     }), 200
 
 
@@ -568,6 +935,166 @@ def approve_ticket(ticket_id):
         "message": "Ticket approved successfully",
         "ticket_id": ticket_id,
         "status": STATUS_APPROVED
+    }), 200
+
+
+@app.route("/tickets/<int:ticket_id>/close", methods=["PATCH"])
+def close_ticket(ticket_id):
+    if current_user_role() != "manager":
+        return error_response("Only manager can close tickets", 403)
+
+    data = request.get_json() or {}
+    manager_comment = data.get("manager_comment")
+
+    conn = get_db_connection()
+
+    ticket = conn.execute("""
+        SELECT *
+        FROM tickets
+        WHERE id = ?
+    """, (ticket_id,)).fetchone()
+
+    if ticket is None:
+        conn.close()
+        return error_response("Ticket not found", 404)
+
+    if ticket["status"] != STATUS_APPROVED:
+        conn.close()
+        return error_response("Only approved tickets can be closed", 400)
+
+    final_comment = manager_comment or ticket["manager_comment"]
+
+    conn.execute("""
+        UPDATE tickets
+        SET status = ?,
+            manager_comment = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (
+        STATUS_CLOSED,
+        final_comment,
+        ticket_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    add_audit_log(
+        ticket_id=ticket_id,
+        action="closed",
+        actor=current_user_display_name(),
+        details=final_comment or "Ticket closed by manager"
+    )
+
+    return jsonify({
+        "message": "Ticket closed successfully",
+        "ticket_id": ticket_id,
+        "status": STATUS_CLOSED,
+        "manager_comment": final_comment
+    }), 200
+
+
+@app.route("/tickets/<int:ticket_id>/manager-note", methods=["PATCH"])
+def save_manager_note(ticket_id):
+    if current_user_role() != "manager":
+        return error_response("Only manager can update manager notes", 403)
+
+    data = request.get_json() or {}
+    manager_comment = data.get("manager_comment")
+
+    conn = get_db_connection()
+
+    ticket = conn.execute("""
+        SELECT *
+        FROM tickets
+        WHERE id = ?
+    """, (ticket_id,)).fetchone()
+
+    if ticket is None:
+        conn.close()
+        return error_response("Ticket not found", 404)
+
+    conn.execute("""
+        UPDATE tickets
+        SET manager_comment = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (
+        manager_comment,
+        ticket_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    add_audit_log(
+        ticket_id=ticket_id,
+        action="manager_note_updated",
+        actor=current_user_display_name(),
+        details=manager_comment or "Manager note cleared"
+    )
+
+    return jsonify({
+        "message": "Manager note saved successfully",
+        "ticket_id": ticket_id,
+        "manager_comment": manager_comment
+    }), 200
+
+
+@app.route("/tickets/<int:ticket_id>/void", methods=["PATCH"])
+def void_ticket(ticket_id):
+    if current_user_role() != "manager":
+        return error_response("Only manager can void tickets", 403)
+
+    data = request.get_json() or {}
+    manager_comment = data.get("manager_comment")
+
+    if not manager_comment:
+        return error_response("manager_comment is required when voiding a ticket", 400)
+
+    conn = get_db_connection()
+
+    ticket = conn.execute("""
+        SELECT *
+        FROM tickets
+        WHERE id = ?
+    """, (ticket_id,)).fetchone()
+
+    if ticket is None:
+        conn.close()
+        return error_response("Ticket not found", 404)
+
+    if is_terminal_status(ticket["status"]):
+        conn.close()
+        return error_response("Closed or voided tickets cannot be voided again", 400)
+
+    conn.execute("""
+        UPDATE tickets
+        SET status = ?,
+            manager_comment = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (
+        STATUS_VOIDED,
+        manager_comment,
+        ticket_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    add_audit_log(
+        ticket_id=ticket_id,
+        action="voided",
+        actor=current_user_display_name(),
+        details=manager_comment
+    )
+
+    return jsonify({
+        "message": "Ticket voided successfully",
+        "ticket_id": ticket_id,
+        "status": STATUS_VOIDED,
+        "manager_comment": manager_comment
     }), 200
 
 
@@ -634,7 +1161,9 @@ def resubmit_ticket(ticket_id):
         return error_response("Only staff can resubmit tickets", 403)
 
     data = request.get_json() or {}
+    proof_type = data.get("proof_type") or "photo"
     proof_path = data.get("proof_path")
+    staff_note = data.get("staff_note")
 
     if not proof_path:
         return error_response("proof_path is required", 400)
@@ -658,13 +1187,17 @@ def resubmit_ticket(ticket_id):
     conn.execute("""
         UPDATE tickets
         SET status = ?,
+            proof_type = ?,
             proof_path = ?,
+            staff_note = ?,
             manager_comment = NULL,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
     """, (
         STATUS_SUBMITTED,
+        proof_type,
         proof_path,
+        staff_note,
         ticket_id
     ))
 
@@ -675,13 +1208,16 @@ def resubmit_ticket(ticket_id):
         ticket_id=ticket_id,
         action="resubmitted",
         actor=current_user_display_name(),
-        details=f"New proof submitted: {proof_path}"
+        details=f"Follow-up proof submitted ({proof_type}): {proof_path}"
     )
 
     return jsonify({
         "message": "Ticket resubmitted successfully",
         "ticket_id": ticket_id,
-        "status": STATUS_SUBMITTED
+        "status": STATUS_SUBMITTED,
+        "proof_type": proof_type,
+        "proof_path": proof_path,
+        "staff_note": staff_note
     }), 200
 
 
@@ -711,6 +1247,185 @@ def get_ticket_logs(ticket_id):
         })
 
     return jsonify(log_list), 200
+
+
+def delete_demo_tickets(conn):
+    demo_ticket_rows = conn.execute("""
+        SELECT id
+        FROM tickets
+        WHERE is_demo = 1
+    """).fetchall()
+
+    demo_ticket_ids = [
+        row["id"]
+        for row in demo_ticket_rows
+    ]
+
+    if not demo_ticket_ids:
+        return 0
+
+    placeholders = ",".join("?" for _ in demo_ticket_ids)
+
+    conn.execute(
+        f"DELETE FROM audit_logs WHERE ticket_id IN ({placeholders})",
+        demo_ticket_ids
+    )
+    conn.execute(
+        f"DELETE FROM tickets WHERE id IN ({placeholders})",
+        demo_ticket_ids
+    )
+
+    return len(demo_ticket_ids)
+
+
+def demo_status_action(ticket):
+    status = ticket["status"]
+
+    if status == STATUS_PENDING:
+        return None
+
+    if status == STATUS_ASSIGNED:
+        return "assigned"
+
+    if status == STATUS_IN_PROGRESS:
+        return "started"
+
+    if status == STATUS_SUBMITTED:
+        return "submitted"
+
+    if status == STATUS_APPROVED:
+        return "approved"
+
+    if status == STATUS_REJECTED:
+        return "rejected"
+
+    if status == STATUS_CLOSED:
+        return "closed"
+
+    if status == STATUS_VOIDED:
+        return "voided"
+
+    return status
+
+
+@app.route("/demo-data/import", methods=["POST"])
+def import_demo_data():
+    if current_user_role() != "manager":
+        return error_response("Only manager can import demo data", 403)
+
+    conn = get_db_connection()
+    deleted_count = delete_demo_tickets(conn)
+    created_ticket_ids = []
+
+    for ticket in DEMO_TICKETS:
+        cursor = conn.execute("""
+            INSERT INTO tickets (
+                ticket_type,
+                category,
+                priority,
+                title,
+                description,
+                reported_by,
+                reported_to,
+                assigned_to,
+                visibility,
+                status,
+                proof_required,
+                proof_type,
+                proof_path,
+                staff_note,
+                manager_comment,
+                is_demo,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            ticket["ticket_type"],
+            ticket["category"],
+            ticket["priority"],
+            ticket["title"],
+            ticket["description"],
+            ticket["reported_by"],
+            ticket["reported_to"],
+            ticket["assigned_to"],
+            ticket["visibility"],
+            ticket["status"],
+            1,
+            ticket["proof_type"],
+            ticket["proof_path"],
+            ticket["staff_note"],
+            ticket["manager_comment"],
+            1,
+            ticket["created_at"],
+            ticket["updated_at"]
+        ))
+
+        ticket_id = cursor.lastrowid
+        created_ticket_ids.append(ticket_id)
+
+        conn.execute("""
+            INSERT INTO audit_logs (
+                ticket_id,
+                action,
+                actor,
+                details,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            ticket_id,
+            "created",
+            ticket["reported_by"],
+            f"Demo ticket created ({ticket['category']} / {ticket['priority']})",
+            ticket["created_at"]
+        ))
+
+        status_action = demo_status_action(ticket)
+
+        if status_action is not None:
+            conn.execute("""
+                INSERT INTO audit_logs (
+                    ticket_id,
+                    action,
+                    actor,
+                    details,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                ticket_id,
+                status_action,
+                ticket["assigned_to"] or ticket["reported_by"],
+                f"Demo workflow state set to {ticket['status']}",
+                ticket["updated_at"]
+            ))
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "message": "Demo data imported successfully",
+        "created_count": len(created_ticket_ids),
+        "deleted_count": deleted_count,
+        "ticket_ids": created_ticket_ids
+    }), 201
+
+
+@app.route("/demo-data", methods=["DELETE"])
+def clear_demo_data():
+    if current_user_role() != "manager":
+        return error_response("Only manager can clear demo data", 403)
+
+    conn = get_db_connection()
+    deleted_count = delete_demo_tickets(conn)
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "message": "Demo data cleared successfully",
+        "deleted_count": deleted_count
+    }), 200
 
 
 @app.route("/staff/<staff_name>/followups", methods=["GET"])
@@ -823,7 +1538,9 @@ def dashboard_summary():
         "in_progress": 0,
         "submitted": 0,
         "approved": 0,
-        "rejected": 0
+        "rejected": 0,
+        "closed": 0,
+        "voided": 0
     }
 
     for row in status_counts:

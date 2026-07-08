@@ -9,6 +9,18 @@ def get_db_connection():
     return conn
 
 
+def ensure_column(conn, table_name, column_name, column_definition):
+    existing_columns = {
+        row["name"]
+        for row in conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+    }
+
+    if column_name not in existing_columns:
+        conn.execute(
+            f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}"
+        )
+
+
 def init_db():
     conn = get_db_connection()
 
@@ -17,6 +29,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS tickets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             ticket_type TEXT NOT NULL DEFAULT 'task',
+            category TEXT NOT NULL DEFAULT 'general_task',
+            priority TEXT NOT NULL DEFAULT 'normal',
             title TEXT NOT NULL,
             description TEXT NOT NULL,
             reported_by TEXT,
@@ -29,6 +43,7 @@ def init_db():
             proof_path TEXT,
             staff_note TEXT,
             manager_comment TEXT,
+            is_demo INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -45,6 +60,10 @@ def init_db():
             FOREIGN KEY (ticket_id) REFERENCES tickets (id)
         )
     """)
+
+    ensure_column(conn, "tickets", "category", "TEXT NOT NULL DEFAULT 'general_task'")
+    ensure_column(conn, "tickets", "priority", "TEXT NOT NULL DEFAULT 'normal'")
+    ensure_column(conn, "tickets", "is_demo", "INTEGER DEFAULT 0")
 
     conn.commit()
     conn.close()

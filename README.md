@@ -1,68 +1,84 @@
 # Helpdesk Ticketing System Project
 
-A basic helpdesk-style ticket management system built to practise support request intake, ticket tracking, approval workflow, escalation-ready notes and service record discipline.
+A Flask and SQLite helpdesk workflow prototype designed for ICT support, retail technology support, and repair-oriented service environments.
 
-This project was created as part of my ICT support portfolio to demonstrate how I think about structured support workflows. It is a learning project and is not intended to be a production ITSM platform.
+This project demonstrates ticket intake, staff and manager workflows, assignment, status tracking, proof submission, manager review, rejection and resubmission, closure decisions, and audit history.
 
-No real customer, staff or business data is included in this repository.
+It was built as part of my ICT support portfolio to show practical understanding of support records, escalation, follow-up visibility, handover, documentation, and workflow improvement.
+
+This is a local learning prototype, not a production ITSM system.
+All data used in this project is fake demo data.
+
+---
 
 ## Purpose
 
-In customer-facing technical support, solving the issue is only one part of good service delivery. It is also important to record the request clearly, track the status, capture useful notes, follow up, and leave enough information for another person to understand what happened.
+In ICT support and retail technology environments, resolving an issue is only one part of good service delivery.
 
-This project was designed to practise those behaviours through a simple ticket workflow.
+A useful workflow also needs clear intake, accurate status tracking, service notes, follow-up records, manager review, escalation history, and enough context for another person to understand what happened.
 
-## Support Workflow Practised
+This project was created to practise those support behaviours through a simple ticket workflow.
 
-The system is designed around a basic support lifecycle:
+---
 
-1. Create a support request
-2. Record the issue description and assigned staff member
-3. Track ticket status
-4. Submit supporting evidence or completion notes
-5. Approve or reject the submitted work
-6. Add manager feedback if correction is needed
-7. Resubmit after correction
-8. Keep an audit history of ticket actions
-9. Review dashboard-style summaries
+## Current Features
 
-## Key Features
+### Ticket Management
 
-* Ticket creation with title, description and assigned staff member
-* Ticket status tracking
-* Supporting evidence / proof record
-* Manager approval and rejection workflow
-* Rejection comments for follow-up or correction
-* Resubmission after rejection
-* Audit log for ticket history
-* Staff failure / rejection history
-* Dashboard summary of ticket status and staff follow-up needs
+* Create tickets with title, description, category, priority, visibility, and assigned staff
+* Track ticket status across pending, assigned, in progress, submitted, approved, rejected, closed, and voided states
+* Edit ticket details and assignment as a manager
+* Use fake demo ticket data for safe local testing
 
-## Why This Matters for ICT Support
+### Staff Workflow
 
-This project reflects the type of workflow discipline required in a help desk or ICT support environment:
+* View assigned tickets
+* Start assigned work
+* Submit proof notes or completion evidence
+* View rejected tickets requiring follow-up
+* Resubmit corrected work after manager feedback
 
-* Logging support requests clearly
-* Capturing useful service notes
-* Updating ticket status
-* Following issues through to completion
-* Escalating or returning work with clear reasons
-* Keeping enough history for another team member to understand the case
-* Supporting consistent handover and accountability
+### Manager Workflow
+
+* Assign or edit ticket ownership
+* Review submitted work
+* Approve, reject, close, or void tickets
+* Add manager notes and rejection comments
+* Return work with clear correction reasons
+
+### Record Keeping
+
+* Maintain audit history for ticket actions
+* Show dashboard-style ticket summaries
+* Track workload and follow-up needs
+* Keep records clear enough for handover and later review
+
+---
+
+## Support Workflow
+
+The system follows a basic support lifecycle:
+
+1. Create a support request or operational task
+2. Record the issue, category, priority, and assigned staff member
+3. Track the ticket as work moves forward
+4. Staff starts work and submits proof notes
+5. Manager reviews the submitted work
+6. Manager approves, rejects, closes, or requests follow-up
+7. Staff corrects and resubmits if required
+8. The system keeps an audit history of ticket actions
+
+---
 
 ## Example Use Case
 
-A staff member is assigned a device check or support task. They complete the task and submit supporting notes or evidence. A manager reviews the submission and either approves it or rejects it with feedback. If rejected, the staff member can correct the issue and resubmit. The system keeps a record of actions so the workflow can be reviewed later.
+A staff member is assigned a device check, repair follow-up, customer issue, or store technology task.
 
-## Screenshots
+They complete the work and submit supporting notes. A manager reviews the submission and either approves it or returns it with feedback. If returned, the staff member corrects the issue and resubmits.
 
-Screenshots can be added here to show:
+The record can later support handover, repeated issue review, SOP improvement, and staff training.
 
-* Dashboard summary
-* Ticket intake form
-* Ticket status tracking
-* Approval / rejection workflow
-* Audit history
+---
 
 ## Technology Used
 
@@ -70,38 +86,84 @@ Screenshots can be added here to show:
 * Flask
 * SQLite
 * HTML templates
+* Vanilla JavaScript
+* Local fake demo data
+
+---
 
 ## How to Run Locally
-
-1. Clone the repository
-2. Create and activate a virtual environment
-3. Install the required dependencies
-4. Run the Flask application
-5. Open the local development server in a browser
-
-Example:
 
 ```bash
 pip install -r requirements.txt
 python app.py
 ```
 
+Then open:
+
+```text
+http://127.0.0.1:5002/
+```
+
+---
+
+## Demo Login
+
+Update this section with the actual safe demo accounts before publishing.
+
+| Role    | Username | Password |
+| ------- | -------- | -------- |
+| Manager | manager  | 1234     |
+| Staff   | staffa   | 1234     |
+| Staff   | staffb   | 1234     |
+
+---
+
+## Privacy and Safety Boundary
+
+This project only uses fake or recreated demo information.
+
+It must not include:
+
+* Real customer names
+* Real staff names
+* Real business names
+* Real workplace screenshots
+* Real SOP documents
+* Real payment, warranty, refund, or repair records
+* Real phone numbers, emails, addresses, serial numbers, IMEI numbers, or internal records
+
+---
+
+## What This Demonstrates
+
+This project demonstrates practical ICT support thinking, including:
+
+* Clear ticket intake and status tracking
+* Role-based staff and manager workflows
+* Service notes and proof submission
+* Manager review and correction logic
+* Rejection, follow-up, and resubmission handling
+* Audit history and handover visibility
+* Privacy-aware use of fake demo data
+* Workflow improvement thinking for SOPs, onboarding, and training
+
+---
+
+## Roadmap
+
+Planned improvements:
+
+* Improve manager assignment and edit flows
+* Strengthen ticket status transitions
+* Add focused tests for key workflow actions
+* Add a guided demo route with fake users and fake tickets
+* Add structured SOP guidance cards using fake demo content
+* Improve screenshots and demo presentation
+
+---
+
 ## Current Status
 
-This is a learning and portfolio project. It is not intended to be a production-ready ticketing system.
+This is an active learning prototype intended for local demonstration and portfolio discussion.
 
-## What I Practised
-
-Through this project, I practised:
-
-* Helpdesk-style workflow design
-* Ticket lifecycle thinking
-* Status tracking
-* Service record structure
-* Audit trail concepts
-* Escalation and correction workflow
-* Dashboard-style support visibility
-
-## Relevance to ICT Support Roles
-
-This project supports my transition into ICT help desk and technical support roles by showing that I understand the importance of accurate records, clear workflow status, follow-up, escalation notes and structured service delivery.
+The current focus is to keep the workflow stable, use safe fake demo data, and present the project clearly as an ICT support and retail operations workflow example.
