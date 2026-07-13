@@ -70,6 +70,63 @@ The system follows a basic support lifecycle:
 
 ---
 
+## Project Screenshots
+
+### Staff Dashboard and Ticket Overview
+
+The dashboard gives staff and managers a quick view of ticket volume, status counts, assigned work, and demo login access.
+
+<img src="assets/staff-dashboard-summary.png" alt="Staff dashboard summary with login and ticket status counts" width="900">
+
+### Ticket Search and Filtering
+
+Tickets can be searched, filtered, sorted, and reviewed from a single operational list.
+
+<img src="assets/ticket-search-and-filters.png" alt="Ticket list with search, filters, priority sorting, and assigned staff information" width="900">
+
+### Staff Issue Reporting
+
+Staff can report an issue with type, title, description, visibility, and proof type.
+
+<img src="assets/staff-report-issue-form.png" alt="Staff report issue form with proof type options" width="900">
+
+### Manager Task Creation
+
+Managers can create tasks, assign staff, set visibility, and choose proof requirements.
+
+<img src="assets/manager-create-and-assign-task.png" alt="Manager create and assign task form" width="900">
+
+### Manager Review Actions
+
+Managers can open ticket actions such as viewing details, assigning staff, editing tickets, approving proof, returning work for follow-up, or voiding a ticket.
+
+<img src="assets/manager-ticket-actions.png" alt="Manager ticket actions menu with review and follow-up options" width="900">
+
+<details>
+<summary>More workflow details</summary>
+
+### Ticket Details
+
+The ticket detail view shows the issue description, assignment, reporter information, visibility, proof reference, staff notes, manager notes, and timestamps.
+
+<img src="assets/ticket-details-overview.png" alt="Ticket details modal showing description, assignment, proof, and staff notes" width="900">
+
+### Activity History
+
+Each ticket keeps an activity record so the workflow can be reviewed later for handover, follow-up, and accountability.
+
+<img src="assets/ticket-activity-history.png" alt="Ticket activity history showing created, assigned, started, submitted, and manager note events" width="900">
+
+### Staff Follow-up Review
+
+The manager follow-up view highlights rejected or returned work that may require correction, resubmission, or coaching.
+
+<img src="assets/manager-staff-follow-up.png" alt="Manager staff follow-up details showing rejected or follow-up ticket counts by staff member" width="900">
+
+</details>
+
+---
+
 ## Example Use Case
 
 A staff member is assigned a device check, repair follow-up, customer issue, or store technology task.
