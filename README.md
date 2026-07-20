@@ -1,10 +1,10 @@
 # Helpdesk Ticketing System Project
 
-A Flask and SQLite helpdesk workflow prototype designed for ICT support, retail technology support, and repair-oriented service environments.
+A practical Flask and SQLite ticket workflow prototype for ICT support, retail technology support, and repair-oriented service environments.
 
-This project demonstrates ticket intake, staff and manager workflows, assignment, status tracking, proof submission, manager review, rejection and resubmission, closure decisions, and audit history.
+This project demonstrates how support requests can be logged, assigned, tracked, reviewed, corrected, and documented with clear staff and manager visibility.
 
-It was built as part of my ICT support portfolio to show practical understanding of support records, escalation, follow-up visibility, handover, documentation, and workflow improvement.
+It was built as part of my ICT support portfolio, combining my ICT bachelor learning with four years of retail management experience in customer-facing troubleshooting, service follow-up, documentation, handover, and operational accountability.
 
 This is a local learning prototype, not a production ITSM system.
 All data used in this project is fake demo data.
@@ -68,65 +68,6 @@ The system follows a basic support lifecycle:
 7. Staff corrects and resubmits if required
 8. The system keeps an audit history of ticket actions
 
----
-
-## Project Screenshots
-
-### Staff Dashboard and Ticket Overview
-
-The dashboard gives staff and managers a quick view of ticket volume, status counts, assigned work, and demo login access.
-
-<img src="assets/staff-dashboard-summary.png" alt="Staff dashboard summary with login and ticket status counts" width="900">
-
-### Ticket Search and Filtering
-
-Tickets can be searched, filtered, sorted, and reviewed from a single operational list.
-
-<img src="assets/ticket-search-and-filters.png" alt="Ticket list with search, filters, priority sorting, and assigned staff information" width="900">
-
-### Staff Issue Reporting
-
-Staff can report an issue with type, title, description, visibility, and proof type.
-
-<img src="assets/staff-report-issue-form.png" alt="Staff report issue form with proof type options" width="900">
-
-### Manager Task Creation
-
-Managers can create tasks, assign staff, set visibility, and choose proof requirements.
-
-<img src="assets/manager-create-and-assign-task.png" alt="Manager create and assign task form" width="900">
-
-### Manager Review Actions
-
-Managers can open ticket actions such as viewing details, assigning staff, editing tickets, approving proof, returning work for follow-up, or voiding a ticket.
-
-<img src="assets/manager-ticket-actions.png" alt="Manager ticket actions menu with review and follow-up options" width="900">
-
-<details>
-<summary>More workflow details</summary>
-
-### Ticket Details
-
-The ticket detail view shows the issue description, assignment, reporter information, visibility, proof reference, staff notes, manager notes, and timestamps.
-
-<img src="assets/ticket-details-overview.png" alt="Ticket details modal showing description, assignment, proof, and staff notes" width="900">
-
-### Activity History
-
-Each ticket keeps an activity record so the workflow can be reviewed later for handover, follow-up, and accountability.
-
-<img src="assets/ticket-activity-history.png" alt="Ticket activity history showing created, assigned, started, submitted, and manager note events" width="900">
-
-### Staff Follow-up Review
-
-The manager follow-up view highlights rejected or returned work that may require correction, resubmission, or coaching.
-
-<img src="assets/manager-staff-follow-up.png" alt="Manager staff follow-up details showing rejected or follow-up ticket counts by staff member" width="900">
-
-</details>
-
----
-
 ## Example Use Case
 
 A staff member is assigned a device check, repair follow-up, customer issue, or store technology task.
@@ -165,8 +106,6 @@ http://127.0.0.1:5002/
 
 ## Demo Login
 
-Update this section with the actual safe demo accounts before publishing.
-
 | Role    | Username | Password |
 | ------- | -------- | -------- |
 | Manager | manager  | 1234     |
@@ -184,7 +123,7 @@ It must not include:
 * Real customer names
 * Real staff names
 * Real business names
-* Real workplace screenshots
+* Real workplace images
 * Real SOP documents
 * Real payment, warranty, refund, or repair records
 * Real phone numbers, emails, addresses, serial numbers, IMEI numbers, or internal records
@@ -215,7 +154,7 @@ Planned improvements:
 * Add focused tests for key workflow actions
 * Add a guided demo route with fake users and fake tickets
 * Add structured SOP guidance cards using fake demo content
-* Improve screenshots and demo presentation
+* Improve safe fake demo data
 
 ---
 
