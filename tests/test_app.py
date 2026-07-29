@@ -133,6 +133,30 @@ def test_app_secret_key_can_be_loaded_from_environment(monkeypatch):
     assert reloaded_app.secret_key == "test-secret-from-env"
 
 
+@pytest.mark.parametrize("debug_value", [None, "", "0", "false", "no", "off"])
+def test_debug_mode_stays_disabled_without_an_explicit_truthy_value(
+    monkeypatch,
+    debug_value
+):
+    if debug_value is None:
+        monkeypatch.delenv("FLASK_DEBUG", raising=False)
+    else:
+        monkeypatch.setenv("FLASK_DEBUG", debug_value)
+
+    import app as app_module
+
+    assert app_module.is_debug_enabled() is False
+
+
+@pytest.mark.parametrize("debug_value", ["1", "true", "yes", "on", " TRUE "])
+def test_debug_mode_can_be_enabled_explicitly(monkeypatch, debug_value):
+    monkeypatch.setenv("FLASK_DEBUG", debug_value)
+
+    import app as app_module
+
+    assert app_module.is_debug_enabled() is True
+
+
 def test_manager_can_import_and_clear_demo_tickets(client):
     login(client, "manager")
 

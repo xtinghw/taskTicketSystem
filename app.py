@@ -11,6 +11,15 @@ UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 
+def is_debug_enabled():
+    return os.environ.get("FLASK_DEBUG", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on"
+    }
+
+
 # Demo user table
 USERS = {
     "manager": {
@@ -1580,4 +1589,4 @@ def dashboard_summary():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5002, use_reloader=False)
+    app.run(debug=is_debug_enabled(), port=5002, use_reloader=False)

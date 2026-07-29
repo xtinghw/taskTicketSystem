@@ -1,90 +1,93 @@
-# Helpdesk Ticketing System Project
+# RetailOps Memory Loop
 
-A practical Flask and SQLite ticket workflow prototype for ICT support, retail technology support, and repair-oriented service environments.
+**Current working module: Task Ticket Dashboard**
 
-This project demonstrates how support requests can be logged, assigned, tracked, reviewed, corrected, and documented with clear staff and manager visibility.
+Frontline support cases, repair follow-ups, handover details, SOP guidance, and practical know-how are often scattered across separate notes and people's memory. When that context is lost, repeated issues take longer to understand and process improvements are harder to carry forward.
 
-It was built as part of my ICT support portfolio, combining my ICT bachelor learning with four years of retail management experience in customer-facing troubleshooting, service follow-up, documentation, handover, and operational accountability.
+RetailOps Memory Loop is a working Flask and SQLite retail support and repair workflow prototype that turns those activities into structured, reviewable records. The current module supports ticket intake, assignment, status tracking, staff evidence, manager review, follow-up, and audit history.
 
-This is a local learning prototype, not a production ITSM system.
-All data used in this project is fake demo data.
+The longer-term direction is planned, human-reviewed AI assistance for recurring issue analysis, operational guidance, and SOP or training improvement. That AI capability is **not implemented in the current build**.
 
----
+This is an ICT support portfolio prototype, not a production ITSM system. All screenshots and records use fake demo data.
 
-## Purpose
-
-In ICT support and retail technology environments, resolving an issue is only one part of good service delivery.
-
-A useful workflow also needs clear intake, accurate status tracking, service notes, follow-up records, manager review, escalation history, and enough context for another person to understand what happened.
-
-This project was created to practise those support behaviours through a simple ticket workflow.
+<img src="assets/staff-dashboard-summary.png" alt="Task Ticket Dashboard showing fake demo ticket counts, workflow status and login access" width="900">
 
 ---
 
-## Current Features
+## Why This Project Exists
 
-### Ticket Management
+Resolving an individual issue is only part of reliable support. A useful operational workflow also needs enough context for another person to understand:
 
-* Create tickets with title, description, category, priority, visibility, and assigned staff
-* Track ticket status across pending, assigned, in progress, submitted, approved, rejected, closed, and voided states
-* Edit ticket details and assignment as a manager
-* Use fake demo ticket data for safe local testing
+* what was reported
+* who owns the next action
+* what work has been completed
+* what evidence or notes were provided
+* what a manager approved, rejected, or returned
+* what the team may need to improve later
+
+The current dashboard creates that shared record before any future AI assistance is considered.
+
+---
+
+## Built Now
+
+Everything in this section is implemented in the current repository and visible in the code, tests, or screenshots.
+
+### Ticket Intake and Tracking
+
+* Create support requests and operational tasks with type, title, description, priority, visibility, assignment, and proof requirements
+* Track pending, assigned, in-progress, submitted, approved, rejected, closed, and voided states
+* Search, filter, and sort the operational ticket list
+* Use fake demo tickets for safe local demonstration
 
 ### Staff Workflow
 
-* View assigned tickets
-* Start assigned work
-* Submit proof notes or completion evidence
-* View rejected tickets requiring follow-up
-* Resubmit corrected work after manager feedback
+* Sign in with a staff demo account and view assigned work
+* Start work and submit notes or proof references
+* See rejected work that requires follow-up
+* Correct and resubmit work after manager feedback
 
 ### Manager Workflow
 
-* Assign or edit ticket ownership
-* Review submitted work
+* Create, assign, and edit tickets
+* Review submitted work and staff notes
 * Approve, reject, close, or void tickets
-* Add manager notes and rejection comments
-* Return work with clear correction reasons
+* Add manager notes and return work with a correction reason
+* Review staff follow-up counts
 
-### Record Keeping
+### Shared Operational Record
 
-* Maintain audit history for ticket actions
-* Show dashboard-style ticket summaries
-* Track workload and follow-up needs
-* Keep records clear enough for handover and later review
-
----
-
-## Support Workflow
-
-The system follows a basic support lifecycle:
-
-1. Create a support request or operational task
-2. Record the issue, category, priority, and assigned staff member
-3. Track the ticket as work moves forward
-4. Staff starts work and submits proof notes
-5. Manager reviews the submitted work
-6. Manager approves, rejects, closes, or requests follow-up
-7. Staff corrects and resubmits if required
-8. The system keeps an audit history of ticket actions
+* Show dashboard totals and status summaries
+* Keep an activity history of ticket actions
+* Preserve handover context across staff and manager steps
+* Make follow-up and review needs visible
 
 ---
 
-## Project Screenshots
+## Current Support Workflow
 
-The screenshots below use fake demo data only. They are included to show the support workflow, not real workplace records.
+1. A support request or operational task is recorded.
+2. Its type, priority, visibility, proof requirement, and owner are captured.
+3. Staff starts the assigned work and submits notes or evidence.
+4. A manager reviews the submission.
+5. The manager approves it, returns it for correction, closes it, or voids it.
+6. Returned work can be corrected and resubmitted.
+7. The activity history preserves the handover and decision trail.
 
-### Staff Dashboard and Ticket Overview
+---
 
-The dashboard gives staff and managers a quick view of ticket volume, status counts, assigned work, and demo login access.
+## Product Screenshots
 
-<img src="assets/staff-dashboard-summary.png" alt="Staff dashboard summary with login and ticket status counts" width="900">
+The dashboard shown above is the main visual overview. The seven additional screenshots below show the rest of the implemented workflow. All records are fake.
+
+<details>
+<summary>View seven more workflow screenshots</summary>
 
 ### Ticket Search and Filtering
 
-Tickets can be searched, filtered, sorted, and reviewed from a single operational list.
+Tickets can be searched, filtered, sorted, and reviewed from one operational list.
 
-<img src="assets/ticket-search-and-filters.png" alt="Ticket list with search, filters, priority sorting, and assigned staff information" width="900">
+<img src="assets/ticket-search-and-filters.png" alt="Ticket list with search, filters, priority sorting and assigned staff information" width="900">
 
 ### Staff Issue Reporting
 
@@ -100,28 +103,25 @@ Managers can create tasks, assign staff, set visibility, and choose proof requir
 
 ### Manager Review Actions
 
-Managers can open ticket actions such as viewing details, assigning staff, editing tickets, approving proof, returning work for follow-up, or voiding a ticket.
+Managers can open ticket actions for assignment, editing, proof review, follow-up, closure, or voiding.
 
 <img src="assets/manager-ticket-actions.png" alt="Manager ticket actions menu with review and follow-up options" width="900">
 
-<details>
-<summary>More workflow screenshots</summary>
-
 ### Ticket Details
 
-The ticket detail view shows the issue description, assignment, reporter information, visibility, proof reference, staff notes, manager notes, and timestamps.
+The detail view shows the issue description, assignment, reporter, visibility, proof reference, notes, and timestamps.
 
-<img src="assets/ticket-details-overview.png" alt="Ticket details modal showing description, assignment, proof, and staff notes" width="900">
+<img src="assets/ticket-details-overview.png" alt="Ticket details modal showing description, assignment, proof and staff notes" width="900">
 
 ### Activity History
 
-Each ticket keeps an activity record so the workflow can be reviewed later for handover, follow-up, and accountability.
+Each ticket keeps an activity record for later handover, follow-up, and review.
 
-<img src="assets/ticket-activity-history.png" alt="Ticket activity history showing created, assigned, started, submitted, and manager note events" width="900">
+<img src="assets/ticket-activity-history.png" alt="Ticket activity history showing created, assigned, started, submitted and manager note events" width="900">
 
 ### Staff Follow-up Review
 
-The manager follow-up view highlights rejected or returned work that may require correction, resubmission, or coaching.
+The manager follow-up view highlights returned work that may require correction, resubmission, or coaching.
 
 <img src="assets/manager-staff-follow-up.png" alt="Manager staff follow-up details showing rejected or follow-up ticket counts by staff member" width="900">
 
@@ -129,28 +129,48 @@ The manager follow-up view highlights rejected or returned work that may require
 
 ---
 
-## Example Use Case
+## Future AI Direction - Not Yet Implemented
 
-A staff member is assigned a device check, repair follow-up, customer issue, or store technology task.
+The existing structured workflow is designed as the foundation for possible human-reviewed AI assistance. A future version could help:
 
-They complete the work and submit supporting notes. A manager reviews the submission and either approves it or returns it with feedback. If returned, the staff member corrects the issue and resubmits.
+* organise unstructured support and repair notes into a manager-reviewable draft
+* flag missing context before a handover or management review
+* surface recurring issue patterns and workflow gaps from recorded cases
+* assist with draft operational guidance
+* assist managers in preparing SOP or training drafts for review
 
-The record can later support handover, repeated issue review, SOP improvement, and staff training.
+AI would remain a process assistant, not the decision-maker. It must not automatically:
+
+* decide refunds or warranty outcomes
+* approve policy exceptions
+* make customer commitments
+* publish or change an SOP
+
+Human review and approval would remain required. Concepts previously explored under names such as Quote Desk, Store Pulse Board, or Repair Warranty Learning Loop are future product exploration only; they are not locked modules and are not built features.
 
 ---
 
-## Technology Used
+## Example Use Case
+
+A staff member receives a device check, repair follow-up, customer issue, or store technology task. They record the work and supporting notes. A manager reviews the submission and either approves it or returns it with clear feedback. If returned, the staff member corrects the issue and resubmits it.
+
+The resulting record supports current handover and accountability. In the future, approved records could also give human reviewers better material for recurring issue analysis, operational guidance, and training improvement.
+
+---
+
+## Technology
 
 * Python
 * Flask
 * SQLite
 * HTML templates
 * Vanilla JavaScript
-* Local fake demo data
 
 ---
 
-## How to Run Locally
+## Run Locally
+
+Install the application dependency and start the dashboard:
 
 ```bash
 pip install -r requirements.txt
@@ -163,6 +183,26 @@ Then open:
 http://127.0.0.1:5002/
 ```
 
+Debug mode is off by default. To enable it explicitly for local troubleshooting:
+
+```bash
+FLASK_DEBUG=1 python app.py
+```
+
+### Run the Tests
+
+If pytest is not already available in your environment:
+
+```bash
+pip install pytest
+```
+
+Run the full test suite:
+
+```bash
+python -m pytest -q
+```
+
 ---
 
 ## Demo Login
@@ -173,54 +213,33 @@ http://127.0.0.1:5002/
 | Staff   | staffa   | 1234     |
 | Staff   | staffb   | 1234     |
 
+These credentials are for local fake demo data only.
+
 ---
 
 ## Privacy and Safety Boundary
 
-This project only uses fake or recreated demo information.
+This project must not include:
 
-It must not include:
-
-* Real customer names
-* Real staff names
-* Real business names
-* Real workplace images
-* Real SOP documents
-* Real payment, warranty, refund, or repair records
-* Real phone numbers, emails, addresses, serial numbers, IMEI numbers, or internal records
+* real customer, staff, or business names
+* real workplace images or SOP documents
+* real payment, warranty, refund, or repair records
+* real phone numbers, emails, addresses, serial numbers, IMEI numbers, or internal records
 
 ---
 
 ## What This Demonstrates
 
-This project demonstrates practical ICT support thinking, including:
-
-* Clear ticket intake and status tracking
-* Role-based staff and manager workflows
-* Service notes and proof submission
-* Manager review and correction logic
-* Rejection, follow-up, and resubmission handling
-* Audit history and handover visibility
-* Privacy-aware use of fake demo data
-* Workflow improvement thinking for SOPs, onboarding, and training
-
----
-
-## Roadmap
-
-Planned improvements:
-
-* Improve manager assignment and edit flows
-* Strengthen ticket status transitions
-* Add focused tests for key workflow actions
-* Add a guided demo route with fake users and fake tickets
-* Add structured SOP guidance cards using fake demo content
-* Improve safe fake demo data
+* practical ICT and retail technology support workflow thinking
+* structured intake, ownership, status, and follow-up
+* staff-to-manager handover and review
+* service notes, evidence, correction, and resubmission
+* audit history and operational visibility
+* privacy-aware documentation with fake demo data
+* a human-approval boundary for future AI-assisted process improvement
 
 ---
 
 ## Current Status
 
-This is an active learning prototype intended for local demonstration and portfolio discussion.
-
-The current focus is to keep the workflow stable, use safe fake demo data, and present the project clearly as an ICT support and retail operations workflow example.
+The Task Ticket Dashboard is working locally and covered by automated workflow tests. Near-term improvements can continue to strengthen status transitions, manager assignment and edit flows, guided fake-data demonstrations, and safe operational guidance examples.
